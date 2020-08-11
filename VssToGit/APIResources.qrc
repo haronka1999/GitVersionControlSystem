@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/buttonpics">
+        <file>ButtonImages/database.png</file>
+        <file>ButtonImages/viewfile1.png</file>
+        <file>ButtonImages/editfile1.png</file>
+        <file>ButtonImages/addfile3.png</file>
+        <file>ButtonImages/help3.png</file>
+        <file>ButtonImages/folders2.png</file>
+        <file>ButtonImages/checkout2.png</file>
+        <file>ButtonImages/checkin.png</file>
+        <file>ButtonImages/refresh.png</file>
+    </qresource>
+</RCC>
