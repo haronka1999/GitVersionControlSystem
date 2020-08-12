@@ -40,6 +40,9 @@ public slots:
     void showHelp();
     void viewFile();
     void closeDialog();
+
+signals:
+    void newFileAdded();
 };
 
 #endif // ADDDIALOG_H

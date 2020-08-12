@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>582</width>
+    <width>574</width>
     <height>427</height>
    </rect>
   </property>
@@ -16,7 +16,7 @@
   <widget class="QLabel" name="nameLabel">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>20</y>
      <width>161</width>
      <height>21</height>
@@ -30,9 +30,9 @@
    <property name="geometry">
     <rect>
      <x>450</x>
-     <y>80</y>
+     <y>90</y>
      <width>101</width>
-     <height>21</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
@@ -48,7 +48,7 @@
      <x>450</x>
      <y>50</y>
      <width>101</width>
-     <height>21</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
@@ -58,7 +58,7 @@
   <widget class="QTreeView" name="treeView">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>50</y>
      <width>411</width>
      <height>361</height>
@@ -69,9 +69,9 @@
    <property name="geometry">
     <rect>
      <x>450</x>
-     <y>110</y>
+     <y>130</y>
      <width>101</width>
-     <height>21</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
@@ -82,9 +82,9 @@
    <property name="geometry">
     <rect>
      <x>450</x>
-     <y>140</y>
+     <y>170</y>
      <width>101</width>
-     <height>21</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">

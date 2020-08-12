@@ -6,6 +6,7 @@ SelectDialog::SelectDialog(QWidget *parent) :
     ui(new Ui::SelectDialog)
 {
     ui->setupUi(this);
+    //both buttons disabled by default
     ui->selectButton->setDisabled(true);
     ui->deselectButton->setDisabled(true);
 
@@ -15,6 +16,7 @@ SelectDialog::SelectDialog(QWidget *parent) :
     connect(ui->helpButton, SIGNAL(clicked(bool)), this, SLOT(showHelp()));
 }
 
+//text is sent to the mainwindow via signals, because the Select dialog is not necessarily closed after the SelectButton or the DeselectButton is clicked
 void SelectDialog::select()
 {
     emit sendSelectedName(ui->textEdit->toPlainText());
@@ -25,9 +27,10 @@ void SelectDialog::deselect()
     emit sendDeselectedName(ui->textEdit->toPlainText());
 }
 
+//change accessability to buttons based on the text typed in
 void SelectDialog::enableButtons()
 {
-    if (ui->textEdit->toPlainText()=="") {
+    if (ui->textEdit->toPlainText()=="") { //there's nothing to be selected
         ui->selectButton->setDisabled(true);
         ui->deselectButton->setDisabled(true);
     } else {

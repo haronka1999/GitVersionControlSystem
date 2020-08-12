@@ -47,7 +47,7 @@ class MainWindow : public QMainWindow
 
 public:
     int columncount = 1;
-    QString workingDirPath;
+    QString workingDirPath = "";
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
@@ -79,7 +79,7 @@ public slots:
     void selectAllFiles();
     void editFile();
     void viewFile();
-    void refreshFileList();
+    void refreshWidgets();
     void help();
 
 

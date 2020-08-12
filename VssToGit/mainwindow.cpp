@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->actionCheck_In->setDisabled(true);
     ui->filesTreeWidget->setHeaderLabel("Name");
     ui->foldersTreeWidget->setHeaderLabel("Name");
-    ui->filesTreeWidget->setSelectionMode(QAbstractItemView::MultiSelection);
+    ui->filesTreeWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->foldersTreeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     //either a folder or a file/group of files can be selected (for check in and check out)
@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->checkOutButton, SIGNAL(clicked(bool)), this, SLOT(checkOut()));
     connect(ui->viewFileButton, SIGNAL(clicked(bool)), this, SLOT(viewFile()));
     connect(ui->editFileButton, SIGNAL(clicked(bool)), this, SLOT(editFile()));
-    connect(ui->refreshButton, SIGNAL(clicked(bool)), this, SLOT(refreshFileList()));
+    connect(ui->refreshButton, SIGNAL(clicked(bool)), this, SLOT(refreshWidgets()));
     connect(ui->helpButton, SIGNAL(clicked(bool)), this, SLOT(help()));
 
     connect(ui->filesTreeWidget, SIGNAL(pressed(QModelIndex)), this, SLOT(changeButtons()));
@@ -151,52 +151,69 @@ void MainWindow::ShowContextMenuDirs(const QPoint &pos)
 
 void MainWindow::showFiles()
 {
-    ui->filesTreeWidget->clear();
-    string errormsg = "";
+    if(workingDirPath!="") { //cannot refresh files' list if there's no working folder selected
+        ui->filesTreeWidget->clear();
+        string errormsg = "";
+        vector<string> files;
+        QTreeWidgetItem *parentItem;
 
+        if(ui->foldersTreeWidget->selectedItems().size()!=0) {
+            parentItem = ui->foldersTreeWidget->selectedItems()[0];
+        } else {
+            parentItem = ui->foldersTreeWidget->findItems(ui->selectedFolderLabel->text(), Qt::MatchExactly, 1)[0];
+        }
+        parentItem->setExpanded(true);
 
-    QTreeWidgetItem *parentItem = ui->foldersTreeWidget->currentItem();
-    ui->selectedFolderLabel->setText(workingDirPath.splitRef("/").last().toString()+"/"+parentItem->text(1));
-    vector<string> files = getFolder("\""+workingDirPath.toStdString()+"/"+parentItem->text(1).toStdString()+"\"", "\".\"", errormsg);
-    parentItem->setExpanded(true);
+        //check because of name convention: WDW_DE instead of WDW_DE/WDW_DE
+        if (!parentItem->parent()){ //it's toplevel
+            ui->selectedFolderLabel->setText(parentItem->text(1));
+            files = getFolder("\""+workingDirPath.toStdString()+"\"", "\".\"", errormsg); //files and folder names to be loaded into the two widgets
 
-    if (errormsg!="") {
-        QMessageBox::information(0, "Error", errormsg.c_str());
-    } else {
-        QString line;
+        } else {
+            ui->selectedFolderLabel->setText(workingDirPath.splitRef("/").last().toString()+"/"+parentItem->text(1));
+            files = getFolder("\""+workingDirPath.toStdString()+"/"+parentItem->text(1).toStdString()+"\"", "\".\"", errormsg); //files and folder names to be loaded into the two widgets
+        }
 
-        //fill first level of widgets
-        for(int i = 0; i < files.size(); i++){
+        if (errormsg!="") {  //bat wasn't executed as expected
+            QMessageBox::information(0, "Error", errormsg.c_str());
+        } else {
+            QString line;
 
-            line = QString::fromStdString(files[i]);
-            QTreeWidgetItem *item = new QTreeWidgetItem();
+            for(int i = 0; i < files.size(); i++){
 
-            if(!line.contains('/')) { //check if it's a file or a folder
-                item->setText(0, line);
-                ui->filesTreeWidget->addTopLevelItem(item);
-            } else { //handling possible folders
-                QString name = line.splitRef("/").first().toString(); //directory name
-                int n = parentItem->childCount();
-                bool exists = false;
+                line = QString::fromStdString(files[i]);
+                QTreeWidgetItem *item = new QTreeWidgetItem();
 
-                //check if it has already been added
-                for(int i=0; i<n; i++){
-                    if (parentItem->child(i)->text(0)==name) {
-                        exists = true;
-                        break;
+                if(!line.contains('/')) {               //check if it's a file or a folder
+                    item->setText(0, line);
+                    ui->filesTreeWidget->addTopLevelItem(item);
+                } else {                                //handling possible folders
+                    QString name = line.splitRef("/").first().toString(); //directory name
+                    int n = parentItem->childCount();
+                    bool exists = false;
+
+                    //check if it has already been added
+                    for(int i=0; i<n; i++){
+                        if (parentItem->child(i)->text(0)==name) {
+                            exists = true;
+                            break;
+                        }
+
                     }
-
-                }
-                if(!exists) {
-                    item->setExpanded(true);
-                    item->setText(0, name);
-                    item->setText(1, parentItem->text(1)+"/"+name);
-                    parentItem->addChild(item);
+                    if(!exists) {
+                        item->setExpanded(true);
+                        item->setText(0, name);
+                        if (parentItem->parent()) {
+                            item->setText(1, parentItem->text(1)+"/"+name);
+                        } else {
+                            item->setText(1, name);
+                        }
+                        parentItem->addChild(item);
+                    }
                 }
             }
         }
     }
-
 }
 
 
@@ -233,7 +250,7 @@ void MainWindow::takeAction(QAction*action)
     }
 
     if(action->objectName().toStdString()=="actionRefresh_file_list"){
-        return refreshFileList();
+        return refreshWidgets();
     }
 
     if(action->objectName().toStdString()=="actionCheck_In"){
@@ -322,7 +339,6 @@ void MainWindow::getDeselectedName(QString name)
 
 void MainWindow::deselectFiles()
 {
-    ui->selectedFolderLabel->setText("Content of " + ui->foldersTreeWidget->currentItem()->text(0));
     if (ui->foldersTreeWidget->selectedItems().size()!=0 && ui->filesTreeWidget->selectedItems().size()!=0){
         ui->filesTreeWidget->selectionModel()->clearSelection();
     }
@@ -344,9 +360,17 @@ void MainWindow::createProject()
 
 void MainWindow::addFiles()
 {
-    AddDialog *dialog = new AddDialog;
-    dialog->setWorkingFolderPath(workingDirPath);
-    dialog->show();
+    //first check if there's a working folder selected
+    if (workingDirPath!="") {
+        AddDialog *dialog = new AddDialog;
+        //in order to help adding files to the selected destination, we pass the needed path
+        dialog->setWorkingFolderPath(workingDirPath+"/"+ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString());
+        //refreshing widgets after new files and folders have been added
+        connect(dialog, SIGNAL(newFileAdded()), this, SLOT(refreshWidgets()));
+        dialog->show();
+    } else {
+        QMessageBox::information(0, "Error", "You need to select your working folder first.");
+    }
 }
 
 void MainWindow::setWorkingFolder()
@@ -355,64 +379,67 @@ void MainWindow::setWorkingFolder()
     dialog.setModal(true);
     dialog.exec();
 
-    ui->foldersTreeWidget->clear();
-    ui->filesTreeWidget->clear();
-
     QString qstr = QString::fromStdString(dialog.pathToShow);
     string path = dialog.pathToShow;
-    string errormsg = "";
-    workingDirPath = qstr;
 
-    // if ok was not pressed quit
-    if (!dialog.isOkClicked)
-        return;
+    if (path!="") {
+        ui->foldersTreeWidget->clear();
+        ui->filesTreeWidget->clear();
+        string errormsg = "";
+        workingDirPath = qstr;
 
-    //add working folder name to folderswidget
-    ui->workingDirLabel->setText("Working folder: "+qstr.splitRef("/").last().toString());
-    ui->selectedFolderLabel->setText(qstr.splitRef("/").last().toString());
+        // if ok was not pressed quit
+        if (!dialog.isOkClicked)
+            return;
 
-    QTreeWidget *tree = ui->foldersTreeWidget;
-    QTreeWidgetItem * topLevel = new QTreeWidgetItem();
-    topLevel->setText(0, qstr.splitRef("/").last().toString());
-    topLevel->setText(1, qstr.splitRef("/").last().toString());
-    tree->addTopLevelItem(topLevel);
+        //add working folder name to folderswidget
+        ui->workingDirLabel->setText("Working folder: "+qstr.splitRef("/").last().toString());
+        ui->selectedFolderLabel->setText(qstr.splitRef("/").last().toString());
 
-    vector<string> files = getFolder("\""+path+"\"", "\".\"", errormsg);
+        QTreeWidget *tree = ui->foldersTreeWidget;
+        QTreeWidgetItem * topLevel = new QTreeWidgetItem();
+        topLevel->setText(0, qstr.splitRef("/").last().toString());
+        topLevel->setText(1, qstr.splitRef("/").last().toString());
+        tree->addTopLevelItem(topLevel);
 
-    if (errormsg!="") {
-        QMessageBox::information(0, "Error", errormsg.c_str());
-    } else {
-        QString line;
-        topLevel->setExpanded(true);
+        vector<string> files = getFolder("\""+path+"\"", "\".\"", errormsg);
 
-        //fill first level of widgets
-        for(int i = 0; i < files.size(); i++){
+        if (errormsg!="") {
+            QMessageBox::information(0, "Error", errormsg.c_str());
+        } else {
+            QString line;
+            topLevel->setExpanded(true);
 
-            line = QString::fromStdString(files[i]);
-            QTreeWidgetItem *item = new QTreeWidgetItem();
+            //fill first level of widgets
+            for(int i = 0; i < files.size(); i++){
 
-            if(!line.contains('/')) { //check if it's a file or a folder
-                item->setText(0, line);
-                ui->filesTreeWidget->addTopLevelItem(item);
-            } else { //handling possible folders
-                QString name = line.splitRef("/").first().toString(); //directory name
-                int n = topLevel->childCount();
-                bool exists = false;
+                line = QString::fromStdString(files[i]);
+                QTreeWidgetItem *item = new QTreeWidgetItem();
 
-                //check if it has already been added
-                for(int i=0; i<n; i++){
-                    if (topLevel->child(i)->text(0)==name) {
-                        exists = true;
-                        break;
+                if(!line.contains('/')) { //check if it's a file or a folder
+                    item->setText(0, line);
+                    ui->filesTreeWidget->addTopLevelItem(item);
+                } else { //handling possible folders
+                    QString name = line.splitRef("/").first().toString(); //directory name
+                    int n = topLevel->childCount();
+                    bool exists = false;
+
+                    //check if it has already been added
+                    for(int i=0; i<n; i++){
+                        if (topLevel->child(i)->text(0)==name) {
+                            exists = true;
+                            break;
+                        }
+
                     }
-
-                }
-                if(!exists) {
-                    item->setText(0, name);
-                    item->setText(1, name);
-                    topLevel->addChild(item);
+                    if(!exists) {
+                        item->setText(0, name);
+                        item->setText(1, name);
+                        topLevel->addChild(item);
+                    }
                 }
             }
+            topLevel->setSelected(true);
         }
     }
 }
@@ -484,42 +511,23 @@ void MainWindow::selectAllFiles()
 
 void MainWindow::editFile()
 {
-    dirModel = new QFileSystemModel(ui->filesTreeWidget);
-    string path = dirModel->fileInfo(ui->filesTreeWidget->currentIndex()).filePath().toStdString();
-    QString qstr = QString::fromStdString(path);
-    QDesktopServices::openUrl(QUrl::fromLocalFile(qstr));
+    QString filePath = workingDirPath + '/' +  ui->filesTreeWidget->currentItem()->text(0);
+    QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
 }
 
 void MainWindow::viewFile()
 {
-    dirModel = new QFileSystemModel(ui->filesTreeWidget);
-    string path = dirModel->fileInfo(ui->filesTreeWidget->currentIndex()).filePath().toStdString();
-    QString qstr = QString::fromStdString(path);
-
-    int pos=-1;
-    for(int i =qstr.size()-1; i>= 0; i--){
-        qDebug() << qstr[i];
-        if (qstr[i] == '/'){
-            pos = i;
-            break;
-        }
-    }
-    if (pos==-1){
-        QMessageBox msgBox;
-        msgBox.setText("Error!");
-        msgBox.setDefaultButton(QMessageBox::Close);
-        msgBox.exec();
-    }
-    QString fileName = qstr.right(qstr.size()-pos-1);
+    QString filePath = workingDirPath + '/' +  ui->filesTreeWidget->currentItem()->text(0);
 
     // if it's a direcotry
-    if (!fileName.contains('.')){
+    if (!filePath.contains('.')){
         QMessageBox msgBox;
         msgBox.setText("It's a directory!");
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.exec();
     }
-    QFile file(qstr);
+
+    QFile file(filePath);
     if(!file.exists()){
         QMessageBox::information(0,"error", file.errorString());
     }
@@ -530,17 +538,14 @@ void MainWindow::viewFile()
         browser->setText(stream.readAll());
         browser->setGeometry(700,180,500,700);
         browser->show();
-        browser->setWindowFlags(Qt::Window
-                       | Qt::WindowMinimizeButtonHint
-                       | Qt::WindowMaximizeButtonHint
-                       | Qt::WindowCloseButtonHint);
         browser->setWindowState(Qt::WindowState::WindowActive);
     }
+
     file.close();
 }
 
 
-void MainWindow::refreshFileList()
+void MainWindow::refreshWidgets()
 {
     showFiles();
 }
