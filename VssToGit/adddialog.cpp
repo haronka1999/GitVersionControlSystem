@@ -98,7 +98,7 @@ void AddDialog::addFiles()
                     //secondly, check the uploaded file in
                     if (!QFile::copy(fileDirModel->filePath(fileind.at(i)), workingFolderPath+"/"+fileName)) {
                         QMessageBox::information(0, "Error", "Unsuccesful copy into working folder.");
-                    } else { //if it was succesfully copied, then it is ready to be check in
+                    } else { //if it was succesfully copied, then it is ready to be checked in
                         string errormsg = "";
                         checkIn("\""+workingFolderPath.toStdString()+"\"", "\""+workingFolderPath.toStdString()+"/"+fileName.toStdString()+ "\"", checkinmsg.toStdString(), errormsg);
 
