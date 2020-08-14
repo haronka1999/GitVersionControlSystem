@@ -32,10 +32,12 @@ AddDialog::AddDialog(QWidget *parent) :
     ui->folderNameLabel->setText(folderDirModel->fileInfo(ui->foldersTreeView->currentIndex()).filePath());
 
     //buttons--------------------------------------------------------------------------------------
-    connect(ui->addButton, SIGNAL(clicked(bool)), this, SLOT(addFiles()));
+    connect(ui->addButton, SIGNAL(clicked(bool)), this, SLOT(add()));
     connect(ui->closeButton, SIGNAL(clicked(bool)), this, SLOT(closeDialog()));
     connect(ui->helpButton, SIGNAL(clicked(bool)), this, SLOT(showHelp()));
     connect(ui->viewFileButton, SIGNAL(clicked(bool)), this, SLOT(viewFile()));
+
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 }
 
 //it helps to keep track of the path where the added files are supposed to be uploaded
@@ -43,6 +45,13 @@ void AddDialog::setWorkingFolderPath(QString path)
 {
     workingFolderPath = path;
 }
+
+void AddDialog::setTreeWidget(QTreeWidget* filesTree, QTreeWidgetItem *item)
+{
+    filesTreewidget = filesTree;
+    parentFolder = item;
+}
+
 
 //loading files in the treeview(left side)
 void AddDialog::showFiles()
@@ -78,60 +87,132 @@ void AddDialog::deselectFolder()
     }
 }
 
-void AddDialog::addFiles()
+void AddDialog::add()
 {
-    QModelIndexList fileind = ui->filesTreeView->selectionModel()->selectedIndexes();
-
     //message
     bool ok;
-    QString checkinmsg = QInputDialog::getText(this, "Add Files Message", "Message:", QLineEdit::Normal, "", &ok, Qt::MSWindowsFixedSizeDialogHint);
+    string checkinmsg = QInputDialog::getText(this, "Add Files Message", "Message:", QLineEdit::Normal, "", &ok, Qt::MSWindowsFixedSizeDialogHint|windowFlags() & ~Qt::WindowContextHelpButtonHint).toStdString();
 
     if (ok) { //dialog was closed with OK button
         if (checkinmsg!="") { //checkin message can't be empty
-            if(fileind.count()!=0){ //file or a group of files selected
 
-                for (int i = 0; i < fileind.count(); i+=4){  //looping through the selected files
-
-                    QString fileName = fileDirModel->fileName(fileind.at(i));
-
-                    //firstly, upload file in the working directory
-                    //secondly, check the uploaded file in
-                    if (!QFile::copy(fileDirModel->filePath(fileind.at(i)), workingFolderPath+"/"+fileName)) {
-                        QMessageBox::information(0, "Error", "Unsuccesful copy into working folder.");
-                    } else { //if it was succesfully copied, then it is ready to be checked in
-                        string errormsg = "";
-                        checkIn("\""+workingFolderPath.toStdString()+"\"", "\""+workingFolderPath.toStdString()+"/"+fileName.toStdString()+ "\"", checkinmsg.toStdString(), errormsg);
-
-                        if (errormsg!="") {
-                            QMessageBox::information(0, "Error", errormsg.c_str());
-                        }
-                    }
-                }
+            if(ui->foldersTreeView->selectionModel()->selectedIndexes().size()==0){ //file or a group of files selected
+                addFile(checkinmsg);
 
             } else { //folder
-
-                QString folderName = folderDirModel->fileName(ui->foldersTreeView->currentIndex());
-
-                //create folder in destination
-                if(QDir().mkdir(workingFolderPath+"/"+folderName)){
-                    //copy files from the source folder to the previously created one
-                    QString command = "Xcopy /E \""+folderDirModel->filePath(ui->foldersTreeView->currentIndex())+"\" \""+workingFolderPath+"/"+folderName+"\"";
-                    WinExec(command.toStdString().c_str(), SW_HIDE);
-
-                    string errormsg = "";
-                    checkIn("\""+workingFolderPath.toStdString()+"\"", "\""+workingFolderPath.toStdString()+"/"+folderName.toStdString()+"\"", checkinmsg.toStdString(), errormsg);
-                    if (errormsg!="") {
-                        QMessageBox::information(0, "Error", errormsg.c_str());
-                    }
-                } else {
-                    QMessageBox::information(0, "Error", "Unsuccesful copy of folder.");
-                }
+                addFolder(checkinmsg);
             }
-            //signal emitted for the mainwindow to refresh folders' and files' list
-            emit newFileAdded();
         }
         else {
             QMessageBox::information(0, "Error", "Aborting check in due to empty message.");
+        }
+    }
+}
+
+
+//making sure that there's no file in the selected folder with the exact same name
+bool AddDialog::fileReadyToBeUploaded(QString fileName)
+{
+    if (filesTreewidget->findItems(fileName, Qt::MatchExactly, 0).size()!=0) { //match for the name was found
+
+        //consent to whether or not overwrite the file
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Error: "+ fileName, "A file named " + fileName + " already exists in in your project. Do you wish to overwrite it?", QMessageBox::Yes|QMessageBox::No);
+
+        if (reply == QMessageBox::Yes) {
+            return true;
+        } else {
+            return false;
+        }
+
+    } else {
+        return true;
+    }
+}
+
+void AddDialog::addFile(string checkinmsg)
+{
+    int uploadedFileNr = 0;     //number of uploeaded files without any bad result
+    QModelIndexList fileind = ui->filesTreeView->selectionModel()->selectedIndexes();
+
+    //looping through the selected files' list
+    for (int i = 0; i < fileind.count(); i+=4){
+
+        QString fileName = fileDirModel->fileName(fileind.at(i));
+
+        if (fileReadyToBeUploaded(fileName)) {
+
+            // upload file in the working directory
+            //if the file already exists in the working folder, it needs to be deleted
+            if(QFile::exists(workingFolderPath+"/"+fileName)) {
+                QFile::remove(workingFolderPath+"/"+fileName);
+            }
+
+            if (!QFile::copy(fileDirModel->filePath(fileind.at(i)), workingFolderPath+"/"+fileName)) {
+                QMessageBox::information(0, "Error", "Unsuccesful copy into working folder.");
+            } else {
+                //if it was successfully copied, it is ready to be checked in
+                string errormsg = "";
+                checkIn("\""+workingFolderPath.toStdString()+"\"", "\""+workingFolderPath.toStdString()+"/"+fileName.toStdString()+ "\"", checkinmsg, errormsg);
+
+                if (errormsg!="") {
+                    QMessageBox::information(0, "Error", errormsg.c_str());
+                } else {
+                    uploadedFileNr++;
+                }
+            }
+        }
+    }
+
+    //signal emitted for the mainwindow to refresh folders' and files' list
+    if (uploadedFileNr>0) {
+        emit newFileAdded();
+    }
+}
+
+//making sure that there's no folder in the selected folder with the exact same name
+bool AddDialog::folderReadyToBeUploaded(QString folderName)
+{
+    int n = parentFolder->childCount();
+
+    for(int i=0; i<n; i++) {
+        if(parentFolder->child(i)->text(0)==folderName) { //check if there's a child folder, in the parent item, with this name
+            QMessageBox::StandardButton reply = QMessageBox::question(this, "Error: "+ folderName, "A folder named " + folderName + " already exists in in your project. Do you wish to overwrite it?", QMessageBox::Yes|QMessageBox::No);
+
+            if (reply == QMessageBox::Yes) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void AddDialog::addFolder(string checkinmsg)
+{
+    QString folderName = folderDirModel->fileName(ui->foldersTreeView->currentIndex());
+
+    if(folderReadyToBeUploaded(folderName)) {
+
+        //create folder in destination
+        if(QFile::exists(workingFolderPath+"/"+folderName)) {
+            QDir dir(workingFolderPath+"/"+folderName);
+            dir.removeRecursively();
+        }
+        QDir().mkdir(workingFolderPath+"/"+folderName);
+
+        //copy files from the source folder to the previously created one
+        QString command = "Xcopy /E \""+folderDirModel->filePath(ui->foldersTreeView->currentIndex())+"\" \""+workingFolderPath+"/"+folderName+"\"";
+        WinExec(command.toStdString().c_str(), SW_HIDE);
+
+        string errormsg = "";
+        checkIn("\""+workingFolderPath.toStdString()+"\"", "\""+workingFolderPath.toStdString()+"/"+folderName.toStdString()+"\"", checkinmsg, errormsg);
+
+        if (errormsg!="") {
+            QMessageBox::information(0, "Error", errormsg.c_str());
+        } else {
+            //signal emitted for the mainwindow to refresh folders' and files' list
+            emit newFileAdded();
         }
     }
 }

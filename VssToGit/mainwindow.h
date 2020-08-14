@@ -48,6 +48,8 @@ class MainWindow : public QMainWindow
 public:
     int columncount = 1;
     QString workingDirPath = "";
+    QString workingDirName = "";
+    QString oldName = "";
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
@@ -59,8 +61,9 @@ private:
 public slots:
     void ShowContextMenuFiles(const QPoint &pos);
     void ShowContextMenuDirs(const QPoint &pos);
-    void showFiles();
+    void expandFolder(QTreeWidgetItem *);
     void menuEditClicked();
+    void menuFileClicked();
     void menuSourceSafeClicked();
     void takeAction(QAction *);
     void changeButtons();
@@ -79,6 +82,10 @@ public slots:
     void selectAllFiles();
     void editFile();
     void viewFile();
+    void deleteSelected();
+    void renameSelected();
+    void renameFileFinished(QTreeWidgetItem *);
+    void renameFolderFinished(QTreeWidgetItem *);
     void refreshWidgets();
     void help();
 

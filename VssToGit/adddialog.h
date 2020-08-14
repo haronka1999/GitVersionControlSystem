@@ -11,6 +11,8 @@
 #include <Git_DLL/Git_DLL/Git_DLL.h>
 #include <QLineEdit>
 #include <QInputDialog>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
 
 namespace Ui {
 class adddialog;
@@ -22,7 +24,13 @@ class AddDialog : public QDialog
 
 public:
     QString workingFolderPath;
+    QTreeWidget* filesTreewidget;
+    QTreeWidget* foldersTreewidget;
+    QTreeWidgetItem *parentFolder;
     void setWorkingFolderPath(QString);
+    void setTreeWidget(QTreeWidget*, QTreeWidgetItem*);
+    bool fileReadyToBeUploaded(QString);
+    bool folderReadyToBeUploaded(QString);
     explicit AddDialog(QWidget *parent = nullptr);
     ~AddDialog();
 
@@ -35,7 +43,9 @@ public slots:
     void showFiles();
     void deselectFiles();
     void deselectFolder();
-    void addFiles();
+    void add();
+    void addFile(string);
+    void addFolder(string);
     void changeStateViewButton();
     void showHelp();
     void viewFile();
