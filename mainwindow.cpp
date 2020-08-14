@@ -596,7 +596,7 @@ void MainWindow::renameFileFinished(QTreeWidgetItem * item)
         string errormsg = "";
         ui->filesTreeWidget->blockSignals(true);
 
-        renameFile(workingDirPath.toStdString(), "\""+(path+oldName).toStdString()+"\"", "\""+(path+item->text(0)).toStdString()+"\"", errormsg);
+        renameFile("\""+workingDirPath.toStdString()+"\"", "\""+(path+oldName).toStdString()+"\"", "\""+(path+item->text(0)).toStdString()+"\"", errormsg);
         if (errormsg!="") {
             QMessageBox::information(0, "Error", errormsg.c_str());
         }
@@ -613,7 +613,7 @@ void MainWindow::renameFolderFinished(QTreeWidgetItem * item)
     ui->foldersTreeWidget->blockSignals(true);
 
     QString pathStr = item->text(1).remove(item->text(1).length()-item->text(0).length(),item->text(0).length())+newName;
-    renameFile(workingDirPath.toStdString(), "\""+(item->text(1)).toStdString()+"\"", "\""+pathStr.toStdString()+"\"", errormsg);
+    renameFile("\""+workingDirPath.toStdString()+"\"", "\""+(item->text(1)).toStdString()+"\"", "\""+pathStr.toStdString()+"\"", errormsg);
     if (errormsg!="") {
         QMessageBox::information(0, "Error", errormsg.c_str());
     }
