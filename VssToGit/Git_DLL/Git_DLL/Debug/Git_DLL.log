@@ -1,0 +1,16 @@
+﻿  pch.cpp
+  dllmain.cpp
+  Git_DLLcpp.cpp
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLLcpp.cpp(17,1): warning C4273: 'gitInit': inconsistent dll linkage
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLL.h(22,29): message : see previous definition of 'gitInit'
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLLcpp.cpp(21,49): warning C4273: 'add': inconsistent dll linkage
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLL.h(23,29): message : see previous definition of 'add'
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLLcpp.cpp(53,1): warning C4273: 'isFileExisting': inconsistent dll linkage
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLL.h(25,29): message : see previous definition of 'isFileExisting'
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLLcpp.cpp(86,58): warning C4273: 'checkIn': inconsistent dll linkage
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLL.h(29,29): message : see previous definition of 'checkIn'
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLLcpp.cpp(120,1): warning C4273: 'checkoutFile': inconsistent dll linkage
+C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Git_DLL\Git_DLL.h(27,29): message : see previous definition of 'checkoutFile'
+  Generating Code...
+     Creating library C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Debug\Git_DLL.lib and object C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Debug\Git_DLL.exp
+  Git_DLL.vcxproj -> C:\Users\zsuzsanna.magyari\source\repos\Git_DLL\Debug\Git_DLL.dll
