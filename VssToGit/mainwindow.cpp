@@ -576,34 +576,34 @@ void MainWindow::selectAllFiles()
 void MainWindow::editFile()
 {
 
-//    string errorMessage = "";
-//    //path and name of the  current file
-//    QString filePath = workingDirPath + ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString();
-//    string name =  ui->filesTreeWidget->currentItem()->text(0).toStdString();
-//    string path = filePath.toStdString();
-//    //cut the fileName from the path
-//    string newPath = path.substr(0,path.length() - name.length());
+    string errorMessage = "";
+    //path and name of the  current file
+    QString filePath = workingDirPath + ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString();
+    string name =  ui->filesTreeWidget->currentItem()->text(0).toStdString();
+    string path = filePath.toStdString();
+    //cut the fileName from the path
+    string newPath = path.substr(0,path.length() - name.length());
 
-//    getFile("\""+filePath.toStdString()+"\"", "\""+name+"\"", errorMessage);
-//    cout << "errorMessage: " << errorMessage << endl;
+    getFile("\""+filePath.toStdString()+"\"", "\""+name+"\"", errorMessage);
+    cout << "errorMessage: " << errorMessage << endl;
 
 
-//    //QTextEdit *browser;
+    //QTextEdit *browser;
 
-//    QString pth = "outfile.txt";
-//    QFile file(pth);
-//    QTextEdit *browser = new QTextEdit();
-//    if (file.open(QIODevice::ReadWrite | QIODevice::Text)){
-//        QTextStream stream(&file);
-//        browser->setText(stream.readAll());
-//        browser->setGeometry(700,180,500,700);
-//        browser->show();
-//        browser->setWindowState(Qt::WindowState::WindowActive);
-//    }
-//    connect(browser, SIGNAL(textChanged()),this,SLOT(askForCheckIn()));
+    QString pth = "outfile.txt";
+    QFile file(pth);
+    QTextEdit *browser = new QTextEdit();
+    if (file.open(QIODevice::ReadWrite | QIODevice::Text)){
+        QTextStream stream(&file);
+        browser->setText(stream.readAll());
+        browser->setGeometry(700,180,500,700);
+        browser->show();
+        browser->setWindowState(Qt::WindowState::WindowActive);
+    }
+    connect(browser, SIGNAL(textChanged()),this,SLOT(askForCheckIn()));
 
-//    QShortcut *shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), browser);
-//    connect(shortcut, SIGNAL(activated()), this, SLOT(savePressed()));
+    QShortcut *shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), browser);
+    connect(shortcut, SIGNAL(activated()), this, SLOT(savePressed()));
 }
 
 void MainWindow::savePressed()
@@ -632,31 +632,26 @@ void MainWindow::askForCheckIn(){
 
 void MainWindow::viewFile()
 {
-//    string errorMessage = "";
-//    QString filePath = workingDirPath + ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString();
-//    string name =  ui->filesTreeWidget->currentItem()->text(0).toStdString();
-//    string path = filePath.toStdString();
-//    string newPath = path.substr(0,path.length() - name.length());
+    string errorMessage = "";
+    QString filePath = workingDirPath + ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString();
+    string name =  ui->filesTreeWidget->currentItem()->text(0).toStdString();
+    string path = filePath.toStdString();
+    string newPath = path.substr(0,path.length() - name.length());
 
-//    //get the latest version which is in the git
-//    getFile("\""+filePath.toStdString()+"\"", "\""+name+"\"", errorMessage);
+    //get the latest version which is in the git
+    getFile("\""+filePath.toStdString()+"\"", "\""+name+"\"", errorMessage);
 
-//    QString pth = "outfile.txt";
-//    QFile file(pth);
-//    if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
-//        QTextStream stream(&file);
-//        QTextBrowser *browser = new QTextBrowser();
-//        browser->setText(stream.readAll());
-//        browser->setGeometry(700,180,500,700);
-//        browser->show();
-//        browser->setWindowState(Qt::WindowState::WindowActive);
-//    }
-
-//    if(!file.exists()){
-//        QMessageBox::information(0,"error", file.errorString());
-//    }
-//    file.close();
-
+    QString pth = "outfile.txt";
+    QFile file(pth);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        QTextStream stream(&file);
+        QTextBrowser *browser = new QTextBrowser();
+        browser->setText(stream.readAll());
+        browser->setGeometry(700,180,500,700);
+        browser->show();
+        browser->setWindowState(Qt::WindowState::WindowActive);
+    }
+    file.close();
 }
 
 void MainWindow::deleteSelected()
