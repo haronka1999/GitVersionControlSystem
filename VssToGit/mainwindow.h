@@ -26,6 +26,7 @@
 #include "workingdirectorydialog.h"
 #include "selectdialog.h"
 #include <QPainter>
+#include "editdialog.h"
 #include "adddialog.h"
 #include <Git_DLL/Git_DLL/Git_DLL.h>
 #include <QStandardItemModel>
@@ -52,7 +53,6 @@ public:
     QString oldName = "";
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
 private:
     Ui::MainWindow *ui;
     QFileSystemModel *dirModel;
@@ -71,6 +71,7 @@ public slots:
     void getDeselectedName(QString);
     void deselectFiles();
     void deselectFolder();
+    void askForCheckIn();
 
     //action-----------------------------------
     void createProject();
