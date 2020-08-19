@@ -26,7 +26,6 @@
 #include "workingdirectorydialog.h"
 #include "selectdialog.h"
 #include <QPainter>
-#include "editdialog.h"
 #include "adddialog.h"
 #include <Git_DLL/Git_DLL/Git_DLL.h>
 #include <QStandardItemModel>
@@ -37,7 +36,7 @@
 #include "checkindialog.h"
 #include <QTreeWidgetItem>
 #include <QTreeWidget>
-
+#include <QShortcut>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -89,6 +88,7 @@ public slots:
     void renameFolderFinished(QTreeWidgetItem *);
     void refreshWidgets();
     void help();
+    void savePressed();
 
 
 signals:
