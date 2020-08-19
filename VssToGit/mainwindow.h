@@ -37,6 +37,7 @@
 #include <QTreeWidgetItem>
 #include <QTreeWidget>
 #include <QShortcut>
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -47,11 +48,13 @@ class MainWindow : public QMainWindow
 
 public:
     int columncount = 1;
+    QColor *col = new QColor(144,238,144);
     QString workingDirPath = "";
     QString workingDirName = "";
     QString oldName = "";
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
 private:
     Ui::MainWindow *ui;
     QFileSystemModel *dirModel;
@@ -89,10 +92,6 @@ public slots:
     void refreshWidgets();
     void help();
     void savePressed();
-
-
-signals:
-
 
 };
 
