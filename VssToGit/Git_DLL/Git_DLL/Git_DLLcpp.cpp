@@ -218,13 +218,15 @@ vector<string> getFolder(string pathtoWorkingDirectory, string folderName, strin
     else {
         cout << "errorMessage: " << errorMessage << endl;
     }
-    
+
     outfoldr.close();
     remove("outfoldr.txt");
     return files;
 }
 
 void getFile(string pathtoWorkingDirectory, string fileName, string& errorMessage) {
+
+    ifstream outerr("outerr.txt"), outfile("outfile.txt");
 
     string str = pathtoWorkingDirectory + " " + fileName + " > outfile.txt 2> outerr.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
@@ -243,24 +245,17 @@ void getFile(string pathtoWorkingDirectory, string fileName, string& errorMessag
     ShellExecuteEx(&ShExecInfo);
     WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
 
-    ifstream outerr("outerr.txt");
     errorMessage = string((istreambuf_iterator<char>(outerr)), istreambuf_iterator<char>());
 
-    ifstream outfile("outfile.txt");
-    string line = "";
 
-    if (errorMessage == "")
-    {
-        while (getline(outfile, line)) {
-            cout << line << endl;
-        }
-    }
-    else {
-        cout << errorMessage << endl;
-    }
+    //string topicName= "notepad \"" + pathtoWorkingDirectory+"/"+fileName + "\"";
+    //cout << "topicname; " << topicName << endl;
+    //WinExec(topicName.c_str(),SW_SHOW);
+
 
     outerr.close();
-    remove("outerr.txt");
+    //remove("outerr.txt");
+
     outfile.close();
-    remove("outfile.txt");
+
 }
