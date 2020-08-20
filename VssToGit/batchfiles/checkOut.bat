@@ -11,4 +11,3 @@ FINDSTR %2 "vss.zsu">NUL
 if %ERRORLEVEL% EQU 1 (
 	echo %2>>"vss.zsu"
 ) 
-
