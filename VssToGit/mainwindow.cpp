@@ -14,6 +14,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->foldersTreeWidget->hideColumn(1);
     ui->foldersTreeWidget->hideColumn(2);
 
+    ui->actionExport->setDisabled(true);
+
+
+
+
+
     //disable or enable tabs on the menu when abou to show
     connect(ui->menuEdit, SIGNAL(aboutToShow()), this, SLOT(menuEditClicked()));
     connect(ui->menuFile, SIGNAL(aboutToShow()), this, SLOT(menuFileClicked()));
@@ -152,6 +158,8 @@ void MainWindow::ShowContextMenuDirs(const QPoint &pos)
     QMenu contextMenu(tr("menu"), this);
     contextMenu.pos() = pos;
     QAction action1("Create Project", this);
+
+
 
     QAction actionCheckIn("Check In", this);
     connect(&actionCheckIn, SIGNAL(triggered()), this, SLOT(checkIn()));
@@ -334,8 +342,16 @@ void MainWindow::menuSourceSafeClicked()
 
 void MainWindow::takeAction(QAction*action)
 {
+    if(action->objectName().toStdString()=="actionExport"){
+        return exportFile();
+    }
+
     if(action->objectName().toStdString()=="actionSelect"){
         return selectFile();
+    }
+
+    if(action->objectName().toStdString()=="actionExport"){
+        return exportFile();
     }
 
     if(action->objectName().toStdString()=="actionSelect_All"){
@@ -487,8 +503,9 @@ void MainWindow::setWorkingFolder()
         //loading first depth files and folders into the widgets
         expandFolder(topLevel);
     }
-}
 
+    ui->actionExport->setDisabled(false);
+}
 void MainWindow::checkIn()
 {
     CheckInDialog dialog;
@@ -613,7 +630,6 @@ void MainWindow::editFile()
         browser->setWindowState(Qt::WindowState::WindowActive);
     }
     connect(browser, SIGNAL(textChanged()),this,SLOT(askForCheckIn()));
-
     QShortcut *shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), browser);
     connect(shortcut, SIGNAL(activated()), this, SLOT(savePressed()));
 }
@@ -637,10 +653,7 @@ void MainWindow::savePressed()
 }
 
 void MainWindow::askForCheckIn(){
-
-
     qDebug() << "HEJ";
-
 }
 
 void MainWindow::viewFile()
@@ -845,6 +858,16 @@ void MainWindow::refreshWidgets()
     }
 }
 
+void MainWindow::exportFile()
+{
+    exportProject("\"" + workingDirPath.toStdString() + "\"");
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("Message");
+    msgBox.setText("Project exported! ");
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.exec();
+}
+
 void MainWindow::help()
 {
     QMessageBox msgBox;
@@ -852,7 +875,7 @@ void MainWindow::help()
     msgBox.setText("\t Software Description"
                    "\n"
                    "\n"
-                   "This QUI provides the same functionalities\n"
+                   "This GUI provides the same functionalities\n"
                    "as the old Visual Source Safe version\n"
                    "control system but it works under Git."
                    "\n\n"

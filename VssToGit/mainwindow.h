@@ -76,6 +76,7 @@ public slots:
     void askForCheckIn();
 
     //action-----------------------------------
+    void exportFile();
     void createProject();
     void addFiles();
     void setWorkingFolder();

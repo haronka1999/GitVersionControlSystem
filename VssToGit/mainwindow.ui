@@ -610,7 +610,7 @@
      <x>0</x>
      <y>0</y>
      <width>1099</width>
-     <height>20</height>
+     <height>26</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -627,6 +627,7 @@ selection-color: rgb(85, 85, 127);</string>
      <string>File</string>
     </property>
     <addaction name="actionAdd_files"/>
+    <addaction name="actionExport"/>
     <addaction name="separator"/>
     <addaction name="actionDelete"/>
     <addaction name="actionRename"/>
@@ -732,21 +733,6 @@ selection-color: rgb(85, 85, 127);</string>
     <string>Name</string>
    </property>
   </action>
-  <action name="actionType">
-   <property name="text">
-    <string>Type</string>
-   </property>
-  </action>
-  <action name="actionSize">
-   <property name="text">
-    <string>Size</string>
-   </property>
-  </action>
-  <action name="actionDate">
-   <property name="text">
-    <string>Date</string>
-   </property>
-  </action>
   <action name="actionAdd_files">
    <property name="text">
     <string>Add Files...</string>
@@ -789,6 +775,11 @@ selection-color: rgb(85, 85, 127);</string>
   <action name="actionRename">
    <property name="text">
     <string>Rename</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export</string>
    </property>
   </action>
  </widget>
