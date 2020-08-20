@@ -14,11 +14,7 @@ AddDialog::AddDialog(QWidget *parent) :
     connect(ui->foldersTreeView, SIGNAL(pressed(const QModelIndex &)), this, SLOT(deselectFiles()));
     connect(ui->filesTreeView, SIGNAL(pressed(const QModelIndex &)), this, SLOT(deselectFolder()));
 
-    //disabled by default until file is selected (or when folder is selected)
-    ui->viewFileButton->setEnabled(false);
-    connect(ui->filesTreeView, SIGNAL(pressed(QModelIndex)), this, SLOT(changeStateViewButton()));
-
-    //loading folders in the treeview(right side)
+    //loading folders into the treeview(right side)--------------------------------------------------------
     folderDirModel = new QFileSystemModel();
     folderDirModel->setRootPath("");
     folderDirModel->setFilter(QDir::Drives | QDir::AllDirs |   QDir::NoDotAndDotDot);
@@ -31,27 +27,25 @@ AddDialog::AddDialog(QWidget *parent) :
 
     ui->folderNameLabel->setText(folderDirModel->fileInfo(ui->foldersTreeView->currentIndex()).filePath());
 
-    //buttons--------------------------------------------------------------------------------------
+    //buttons----------------------------------------------------------------------------------------------
     connect(ui->addButton, SIGNAL(clicked(bool)), this, SLOT(add()));
-    connect(ui->closeButton, SIGNAL(clicked(bool)), this, SLOT(closeDialog()));
-    connect(ui->helpButton, SIGNAL(clicked(bool)), this, SLOT(showHelp()));
     connect(ui->viewFileButton, SIGNAL(clicked(bool)), this, SLOT(viewFile()));
+    connect(ui->closeButton, SIGNAL(clicked(bool)), this, SLOT(closeDialog()));
 
+    //disabled by default until file is selected (or when folder is selected)
+    ui->viewFileButton->setEnabled(false);
+    connect(ui->filesTreeView, SIGNAL(pressed(QModelIndex)), this, SLOT(changeStateViewButton()));
+
+    //removes the whatisthis hint plugin
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 }
 
-//it helps to keep track of the path where the added files are supposed to be uploaded
-void AddDialog::setWorkingFolderPath(QString path)
+void AddDialog::setTreeWidget(QString path, QTreeWidget* filesTree, QTreeWidgetItem *item)
 {
-    workingFolderPath = path;
-}
-
-void AddDialog::setTreeWidget(QTreeWidget* filesTree, QTreeWidgetItem *item)
-{
+    destinationPath = path;
     filesTreewidget = filesTree;
     parentFolder = item;
 }
-
 
 //loading files in the treeview(left side)
 void AddDialog::showFiles()
@@ -70,10 +64,20 @@ void AddDialog::showFiles()
     ui->filesTreeView->setRootIndex(idx);
 }
 
+//the accesibility to view a file changes based on the number of files selected
+void AddDialog::changeStateViewButton()
+{
+    if (ui->filesTreeView->selectionModel()->selectedIndexes().size()==4) { //only one file can be selected for view
+        ui->viewFileButton->setEnabled(true);
+    } else {
+        ui->viewFileButton->setEnabled(false); // action not performed if there's more than one file selected
+    }
+}
+
 //a folder was clicked
 void AddDialog::deselectFiles()
 {
-    if (ui->foldersTreeView->selectionModel()->selectedIndexes().size()!=0 && ui->filesTreeView->selectionModel()->selectedIndexes().size()!=0){
+    if (ui->foldersTreeView->selectionModel()->selectedIndexes().size()!=0){
         ui->filesTreeView->selectionModel()->clearSelection();
         ui->viewFileButton->setEnabled(false);
     }
@@ -82,7 +86,7 @@ void AddDialog::deselectFiles()
 //a file was clicked
 void AddDialog::deselectFolder()
 {
-    if (ui->filesTreeView->selectionModel()->selectedIndexes().size()!=0 && ui->foldersTreeView->selectionModel()->selectedIndexes().size()!=0){
+    if (ui->filesTreeView->selectionModel()->selectedIndexes().size()!=0){
         ui->foldersTreeView->selectionModel()->clearSelection();
     }
 }
@@ -111,7 +115,10 @@ void AddDialog::add()
 
 
 //making sure that there's no file in the selected folder with the exact same name
-bool AddDialog::fileReadyToBeUploaded(QString fileName)
+//0-file is not in the repo
+//1-file is in the repo, but it can be overwritten
+//2-file is in the repo, but it can't be overwritten
+int AddDialog::fileReadyToBeUploaded(QString fileName)
 {
     if (filesTreewidget->findItems(fileName, Qt::MatchExactly, 0).size()!=0) { //match for the name was found
 
@@ -119,111 +126,122 @@ bool AddDialog::fileReadyToBeUploaded(QString fileName)
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Error: "+ fileName, "A file named " + fileName + " already exists in in your project. Do you wish to overwrite it?", QMessageBox::Yes|QMessageBox::No);
 
         if (reply == QMessageBox::Yes) {
-            return true;
+            return 1;
         } else {
-            return false;
+            return 2;
         }
 
     } else {
-        return true;
+        return 0;
     }
 }
 
 void AddDialog::addFile(string checkinmsg)
 {
-    int uploadedFileNr = 0;     //number of uploeaded files without any bad result
+    //list of file names to be uploaded into the files' treewidget(at the top)
+    QList<QTreeWidgetItem *> newFileList;
+
     QModelIndexList fileind = ui->filesTreeView->selectionModel()->selectedIndexes();
 
     //looping through the selected files' list
     for (int i = 0; i < fileind.count(); i+=4){
 
         QString fileName = fileDirModel->fileName(fileind.at(i));
-
-        if (fileReadyToBeUploaded(fileName)) {
+        int result = fileReadyToBeUploaded(fileName);
+        if (result<2) {
 
             // upload file in the working directory
             //if the file already exists in the working folder, it needs to be deleted
-            if(QFile::exists(workingFolderPath+"/"+fileName)) {
-                QFile::remove(workingFolderPath+"/"+fileName);
+            QString pathToFile = destinationPath+"/"+fileName;
+            if(QFile::exists(pathToFile)) {
+                QFile::remove(pathToFile);
             }
 
-            if (!QFile::copy(fileDirModel->filePath(fileind.at(i)), workingFolderPath+"/"+fileName)) {
+            if (!QFile::copy(fileName, pathToFile)) {
                 QMessageBox::information(0, "Error", "Unsuccesful copy into working folder.");
             } else {
                 //if it was successfully copied, it is ready to be checked in
                 string errormsg = "";
-                checkIn("\""+workingFolderPath.toStdString()+"\"", "\""+workingFolderPath.toStdString()+"/"+fileName.toStdString()+ "\"", checkinmsg, errormsg);
+                checkIn("\""+destinationPath.toStdString()+"\"", ("\""+destinationPath+"/"+fileName+ "\"").toStdString(), checkinmsg, errormsg);
 
                 if (errormsg!="") {
                     QMessageBox::information(0, "Error", errormsg.c_str());
                 } else {
-                    uploadedFileNr++;
+                    //file is not present in the widget, so it can be added
+                    if(result==0) {
+                        QTreeWidgetItem *item = new QTreeWidgetItem;
+                        item->setText(0, fileName);
+                        newFileList.push_back(item);
+                    }
                 }
             }
         }
     }
 
-    //signal emitted for the mainwindow to refresh folders' and files' list
-    if (uploadedFileNr>0) {
-        emit newFileAdded();
+    //upload new files into the mainwindow's widget
+    if (newFileList.size()!=0) {
+        filesTreewidget->insertTopLevelItems(0, newFileList);
     }
 }
 
 //making sure that there's no folder in the selected folder with the exact same name
-bool AddDialog::folderReadyToBeUploaded(QString folderName)
+//0-folder is not in the repo
+//1-folder is in the repo, but it can be overwritten
+//2-folder is in the repo, but it can't be overwritten
+int AddDialog::folderReadyToBeUploaded(QString folderName)
 {
-    int n = parentFolder->childCount();
+    int childnr = parentFolder->childCount();
 
-    for(int i=0; i<n; i++) {
+    for(int i=0; i<childnr; i++) {
         if(parentFolder->child(i)->text(0)==folderName) { //check if there's a child folder, in the parent item, with this name
             QMessageBox::StandardButton reply = QMessageBox::question(this, "Error: "+ folderName, "A folder named " + folderName + " already exists in in your project. Do you wish to overwrite it?", QMessageBox::Yes|QMessageBox::No);
 
             if (reply == QMessageBox::Yes) {
-                return true;
+                return 1;
             } else {
-                return false;
+                return 2;
             }
         }
     }
-    return true;
+    return 0;
 }
 
 void AddDialog::addFolder(string checkinmsg)
 {
     QString folderName = folderDirModel->fileName(ui->foldersTreeView->currentIndex());
-
-    if(folderReadyToBeUploaded(folderName)) {
+    int result = folderReadyToBeUploaded(folderName);
+    if(result<2) {
 
         //create folder in destination
-        if(QFile::exists(workingFolderPath+"/"+folderName)) {
-            QDir dir(workingFolderPath+"/"+folderName);
+        QString pathToFolder = destinationPath+"/"+folderName;
+        if(QFile::exists(pathToFolder)) {
+            QDir dir(pathToFolder);
             dir.removeRecursively();
         }
-        QDir().mkdir(workingFolderPath+"/"+folderName);
+        QDir().mkdir(pathToFolder);
 
         //copy files from the source folder to the previously created one
-        QString command = "Xcopy /E \""+folderDirModel->filePath(ui->foldersTreeView->currentIndex())+"\" \""+workingFolderPath+"/"+folderName+"\"";
-        WinExec(command.toStdString().c_str(), SW_HIDE);
+        WinExec(("Xcopy /E \""+folderName+"\" \""+pathToFolder+"\"").toStdString().c_str(), SW_HIDE);
 
         string errormsg = "";
-        checkIn("\""+workingFolderPath.toStdString()+"\"", "\""+workingFolderPath.toStdString()+"/"+folderName.toStdString()+"\"", checkinmsg, errormsg);
+        checkIn("\""+destinationPath.toStdString()+"\"", ("\""+destinationPath+"/"+folderName+"\"").toStdString(), checkinmsg, errormsg);
 
         if (errormsg!="") {
             QMessageBox::information(0, "Error", errormsg.c_str());
         } else {
-            //signal emitted for the mainwindow to refresh folders' and files' list
-            emit newFileAdded();
+            //upload new folder into the folders' treewidget
+            QTreeWidgetItem *item = new QTreeWidgetItem;
+            item->setText(0, folderName);
+            if(parentFolder->parent()) { //check if topLevelItem(in that case is "")
+                item->setText(1, parentFolder->text(1)+"/"+folderName);
+            } else {
+                item->setText(1, folderName);
+            }
+            //if folder's already in the widget, no need to added twice
+            if(result==0) {
+                parentFolder->addChild(item);
+            }
         }
-    }
-}
-
-//the accesibility to view a file changes based on the number of files selected
-void AddDialog::changeStateViewButton()
-{
-    if (ui->filesTreeView->selectionModel()->selectedIndexes().size()==4) { //only one file can be selected for view
-        ui->viewFileButton->setEnabled(true);
-    } else {
-        ui->viewFileButton->setEnabled(false); // action not performed if there's more than one file selected
     }
 }
 
@@ -233,14 +251,14 @@ void AddDialog::viewFile()
 
     //check if file exists
     if (!file.exists()){
-        QMessageBox::information(0, "error", file.errorString());
+        QMessageBox::information(0, "Error", file.errorString());
     } else {
 
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)!=0){
             QTextStream stream(&file);
             QTextBrowser *browser = new QTextBrowser();
             browser->setText(stream.readAll());
-            browser->setGeometry(700, 180, 500, 700);
+            browser->setGeometry(600, 180, 1000, 700);
             browser->show();
         } else {
             QMessageBox::information(0, "Error", file.errorString());

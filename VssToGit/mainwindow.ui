@@ -782,6 +782,9 @@ selection-color: rgb(85, 85, 127);</string>
    <property name="text">
     <string>Delete</string>
    </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
   </action>
   <action name="actionRename">
    <property name="text">

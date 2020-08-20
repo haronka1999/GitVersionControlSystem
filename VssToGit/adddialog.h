@@ -1,18 +1,18 @@
 #ifndef ADDDIALOG_H
 #define ADDDIALOG_H
 
+#include <string>
+#include <iostream>
 #include <QDialog>
 #include <QFileSystemModel>
 #include <QMessageBox>
 #include <QTextBrowser>
-#include <iostream>
-#include <string>
 #include <QTextStream>
-#include <Git_DLL/Git_DLL/Git_DLL.h>
 #include <QLineEdit>
 #include <QInputDialog>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <Git_DLL/Git_DLL/Git_DLL.h>
 
 namespace Ui {
 class adddialog;
@@ -23,14 +23,13 @@ class AddDialog : public QDialog
     Q_OBJECT
 
 public:
-    QString workingFolderPath;
+    QString destinationPath;
     QTreeWidget* filesTreewidget;
     QTreeWidget* foldersTreewidget;
     QTreeWidgetItem *parentFolder;
-    void setWorkingFolderPath(QString);
-    void setTreeWidget(QTreeWidget*, QTreeWidgetItem*);
-    bool fileReadyToBeUploaded(QString);
-    bool folderReadyToBeUploaded(QString);
+    void setTreeWidget(QString, QTreeWidget*, QTreeWidgetItem*);
+    int fileReadyToBeUploaded(QString);
+    int folderReadyToBeUploaded(QString);
     explicit AddDialog(QWidget *parent = nullptr);
     ~AddDialog();
 
@@ -41,18 +40,15 @@ private:
 
 public slots:
     void showFiles();
+    void changeStateViewButton();
     void deselectFiles();
     void deselectFolder();
     void add();
     void addFile(string);
     void addFolder(string);
-    void changeStateViewButton();
-    void showHelp();
     void viewFile();
+    void showHelp();
     void closeDialog();
-
-signals:
-    void newFileAdded();
 };
 
 #endif // ADDDIALOG_H

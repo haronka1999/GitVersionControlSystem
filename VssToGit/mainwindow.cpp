@@ -438,8 +438,8 @@ void MainWindow::addFiles()
         AddDialog *dialog = new AddDialog;
 
         //in order to help adding files to the selected destination, we pass the needed path
-        dialog->setWorkingFolderPath(workingDirPath+"/"+ui->selectedFolderLabel->text().splitRef(workingDirName).last().toString());
-        //passing the widgets over to the dialog in order to examine whether or not a file or folder is already added to the project
+        QString destinationPath = workingDirPath+"/"+ui->selectedFolderLabel->text().splitRef(workingDirName).last().toString();
+        //passing the widgets over to the dialog in order to examine whether or not a file or folder is already added to the project and to be able to upload the new items
         QTreeWidgetItem* parentItem;
         if (ui->foldersTreeWidget->selectedItems().size()==0) {
             if (!(parentItem = ui->foldersTreeWidget->findItems(ui->selectedFolderLabel->text(), Qt::MatchContains|Qt::MatchRecursive, 0)[0])) {
@@ -448,10 +448,8 @@ void MainWindow::addFiles()
         } else {
             parentItem = ui->foldersTreeWidget->selectedItems()[0];
         }
-        dialog->setTreeWidget(ui->filesTreeWidget, parentItem);
+        dialog->setTreeWidget(destinationPath, ui->filesTreeWidget, parentItem);
 
-        //refreshing widgets after new files and folders have been added
-        connect(dialog, SIGNAL(newFileAdded()), this, SLOT(refreshWidgets()));
         setEnabled(false);
         dialog->show();
         setEnabled(true);
@@ -596,7 +594,7 @@ void MainWindow::editFile()
     if (file.open(QIODevice::ReadWrite | QIODevice::Text)){
         QTextStream stream(&file);
         browser->setText(stream.readAll());
-        browser->setGeometry(700,180,500,700);
+        browser->setGeometry(700,180,1000,700);
         browser->show();
         browser->setWindowState(Qt::WindowState::WindowActive);
     }
@@ -647,7 +645,7 @@ void MainWindow::viewFile()
         QTextStream stream(&file);
         QTextBrowser *browser = new QTextBrowser();
         browser->setText(stream.readAll());
-        browser->setGeometry(700,180,500,700);
+        browser->setGeometry(700,180,1000,700);
         browser->show();
         browser->setWindowState(Qt::WindowState::WindowActive);
     }
