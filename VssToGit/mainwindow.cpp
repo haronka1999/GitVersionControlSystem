@@ -493,35 +493,49 @@ void MainWindow::checkIn()
 {
     CheckInDialog dialog;
     dialog.setModal(true);
+    string errormsg = "",commitMessage,filePath,name;
     dialog.exec();
 
-    string msg = dialog.getMessage().toStdString();
+    if ( dialog.okClicked){
+        QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
+        int filenr = fileList.size();
 
-    QList<QTreeWidgetItem *> itemList = ui->filesTreeWidget->selectedItems();
-    int filenr = itemList.size();
-
-    if(filenr!=0){ //file or a group of files selected
-
-        for (int i = 0; i < filenr; i+=4){
-            string errormsg = "";
-
-            if (errormsg!="") {
+        // if one file is selected
+        if(filenr!=0){
+            commitMessage = dialog.getMessage().toStdString();
+            for (int i = 0; i < filenr; i+=4){
+                filePath = (workingDirPath + ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString()).toStdString();
+                name =  ui->filesTreeWidget->currentItem()->text(0).toStdString();
+                checkInFile("\"" + filePath  + "\"" ,"\"" + name  + "\"","\"" + commitMessage  + "\"" ,errormsg);
+            }
+            if(errormsg != ""){
                 QMessageBox::information(0, "Error", errormsg.c_str());
+            }else{
+                QMessageBox::information(0, "Success", "the file(s) is/are successfully checked in\t");
             }
         }
 
-    } else { //folder
-        string errormsg = "";
+        //folder selected
+        else {
+            vector<string> files = getFolder("\""+workingDirPath.toStdString()+"\"", "\".\"", errormsg);
+            cout <<"errorMessage: " << errormsg << endl;
 
-        if (errormsg!="") {
-            QMessageBox::information(0, "Error", errormsg.c_str());
+            cout <<endl << "files: " << endl;
+            for(auto i =0 ; i < files.size() ; i++){
+                checkInFile("\"" + filePath  + "\"" ,"\"" + files[i]  + "\"","\"" + commitMessage  + "\"" ,errormsg);
+                if(errormsg != ""){
+                    QMessageBox::information(0, "Error", errormsg.c_str());
+                }
+                cout << files[i] << endl;
+            }
+            QMessageBox::information(0, "Success", "the file(s) is/are successfully checked in\t");
         }
     }
 }
 
 void MainWindow::checkOut()
 {
-    QColor col(144,238,144);
+    QColor col(113, 44, 165);
     string path, name, errormsg  = "";
     //a file with own mimetype, which keeps track of the checked out files
     QString filePath = workingDirPath + ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString() + "/" + "vss.zsu";
@@ -614,8 +628,9 @@ void MainWindow::savePressed()
     msgBox.addButton(QMessageBox::No);
 
     if(msgBox.exec() == QMessageBox::Yes){
-        CheckInDialog *checkInDialog  = new CheckInDialog();
-        checkInDialog->show();
+        //        CheckInDialog *checkInDialog  = new CheckInDialog();
+        //        checkInDialog->show();
+        checkIn();
     }else {
         msgBox.close();
     }
@@ -833,8 +848,8 @@ void MainWindow::refreshWidgets()
 void MainWindow::help()
 {
     QMessageBox msgBox;
-        msgBox.setWindowTitle("Help");
-        msgBox.setText("\t Software Description"
+    msgBox.setWindowTitle("Help");
+    msgBox.setText("\t Software Description"
                    "\n"
                    "\n"
                    "This QUI provides the same functionalities\n"

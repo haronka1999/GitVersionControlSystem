@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QMessageBox>
+#include "mainwindow.h"
 
 namespace Ui {
 class checkInDialog;
@@ -17,6 +18,7 @@ public:
     QString message;
     QString getMessage();
     ~CheckInDialog();
+    bool okClicked = false;
 
 private:
     Ui::checkInDialog *ui;
@@ -24,6 +26,9 @@ private:
 public slots:
     void showHelp();
 
+private slots:
+    void on_cancelButton_clicked();
+    void on_okButton_clicked();
 };
 
 #endif // CHECKINDIALOG_H

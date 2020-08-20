@@ -48,7 +48,7 @@ class MainWindow : public QMainWindow
 
 public:
     int columncount = 1;
-    QColor *col = new QColor(144,238,144);
+    QColor *col = new QColor(113, 44, 165);
     QString workingDirPath = "";
     QString workingDirName = "";
     QString oldName = "";
