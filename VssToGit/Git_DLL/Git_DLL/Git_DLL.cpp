@@ -85,7 +85,7 @@ bool isFileExisting(string pathtoWorkingDirectory, string fileName, string& erro
 }
 
 
-void checkIn(string pathtoWorkingDirectory, string fileName, string commitMessage, string& errorMessage) {
+void checkInFile(string pathtoWorkingDirectory, string fileName, string commitMessage, string& errorMessage) {
 
     string str = pathtoWorkingDirectory + " " + fileName + " " + commitMessage + " 2> out.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
