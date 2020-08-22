@@ -19,6 +19,8 @@
 
 using namespace std;
 
+GIT_DLL_API void exportProject(string pathtoWorkingDirectory, string projectName);
+GIT_DLL_API void exportFolder(string pathtoWorkingDirectory, string folderName);
 GIT_DLL_API void gitInit(string pathtoWorkingDirectory);
 GIT_DLL_API void deleteFile(string pathtoWorkingDirectory, string fileName, string& errorMessage);
 GIT_DLL_API void renameFile(string pathtoWorkingDirectory, string oldName, string newName, string& errorMessage);

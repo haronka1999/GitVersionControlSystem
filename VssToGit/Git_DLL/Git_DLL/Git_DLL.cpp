@@ -3,6 +3,18 @@
 #include <limits.h>
 #include "Git_DLL.h"
 
+void exportProject(string pathtoWorkingDirectory, string projectName)
+{
+    string cmd = "batchfiles\\exportProject.bat " + pathtoWorkingDirectory + " " + projectName;
+    WinExec(cmd.c_str(), SW_HIDE);
+}
+
+void exportFolder(string pathtoWorkingDirectory, string folderName)
+{
+    string cmd = "batchfiles\\exportFolder.bat " + pathtoWorkingDirectory + " " + folderName;
+    WinExec(cmd.c_str(), SW_HIDE);
+}
+
 void gitInit(string pathtoWorkingDirectory)
 {
     string cmd = "batchfiles\\initrepo.bat " + pathtoWorkingDirectory;

@@ -16,10 +16,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->actionExport->setDisabled(true);
 
-
-
-
-
     //disable or enable tabs on the menu when abou to show
     connect(ui->menuEdit, SIGNAL(aboutToShow()), this, SLOT(menuEditClicked()));
     connect(ui->menuFile, SIGNAL(aboutToShow()), this, SLOT(menuFileClicked()));
@@ -169,6 +165,10 @@ void MainWindow::ShowContextMenuDirs(const QPoint &pos)
     connect(&actionCheckOut, SIGNAL(triggered()), this, SLOT(checkOut()));
     contextMenu.addAction(&actionCheckOut);
 
+    QAction actionExport("Export", this);
+    connect(&actionExport, SIGNAL(triggered()), this, SLOT(exportFile()));
+    contextMenu.addAction(&actionExport);
+
     contextMenu.addSeparator();
 
     QAction actionDelete("Delete", this);
@@ -185,6 +185,7 @@ void MainWindow::ShowContextMenuDirs(const QPoint &pos)
         actionCheckOut.setDisabled(true);
         actionDelete.setDisabled(true);
         actionRename.setDisabled(true);
+        actionExport.setDisabled(true);
     } else {
         //check if there's any file checked out, that could be checked in
         QString filePath = workingDirPath + ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString() + "/" + "vss.zsu";
@@ -859,8 +860,19 @@ void MainWindow::refreshWidgets()
 }
 
 void MainWindow::exportFile()
-{
-    exportProject("\"" + workingDirPath.toStdString() + "\"");
+{ 
+
+    qDebug() <<"workingDirPath: " << workingDirPath;
+    // in case the selected folder is the top folder
+    if ( ui->selectedFolderLabel->text() == workingDirName){
+        exportProject("\"" + workingDirPath.toStdString() + "/" + "\"", "\"" + workingDirName.toStdString() + "\"");
+    }else{
+        QString filePath =  workingDirPath + ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString() + "/";
+        QString fileName = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString();
+        //remove the / form the beginning
+        fileName = fileName.remove(0,1);
+        exportFolder("\"" + filePath.toStdString() + "\"", "\"" + fileName.toStdString() + "\"");
+    }
     QMessageBox msgBox;
     msgBox.setWindowTitle("Message");
     msgBox.setText("Project exported! ");
