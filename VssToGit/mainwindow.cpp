@@ -13,8 +13,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->foldersTreeWidget->setColumnCount(2);
     ui->foldersTreeWidget->hideColumn(1);
 
-    ui->actionExport->setDisabled(true);
-
     //disable or enable tabs on the menu when abou to show
     connect(ui->menuEdit, SIGNAL(aboutToShow()), this, SLOT(menuEditClicked()));
     connect(ui->menuFile, SIGNAL(aboutToShow()), this, SLOT(menuFileClicked()));
@@ -118,16 +116,25 @@ void MainWindow::showContextMenuFiles(const QPoint &pos)
         actionDelete.setDisabled(true);
         actionRename.setDisabled(true);
     } else {
+
+        actionEdit.setDisabled(true);
+        actionCheckIn.setDisabled(true);
+        QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
+        QTreeWidgetItem *file;
+        foreach(file, fileList) {
+            //check if file was checked out by its color (black->not checked out)
+            if(file->textColor(0).red()!=0 && file->textColor(0).green()!=0 && file->textColor(0).blue()!=0) {
+                actionEdit.setDisabled(false);
+                actionCheckIn.setDisabled(false);
+                break;
+            }
+        }
+
         //check whether or not only one file is selected, because can't open, edit or rename mutiple at the same time
         if (ui->filesTreeWidget->selectedItems().size()!=1) {
             actionEdit.setDisabled(true);
             actionView.setDisabled(true);
             actionRename.setDisabled(true);
-        }
-
-        //check if file was checked out by its color (black->not checked out)
-        if(ui->filesTreeWidget->currentItem()->textColor(0).red()==0 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
-            actionCheckIn.setDisabled(true);
         }
     }
     contextMenu.exec(mapToParent(ui->filesTreeWidget->pos()+pos));
@@ -137,8 +144,6 @@ void MainWindow::showContextMenuFiles(const QPoint &pos)
 //context menu for folders widget
 void MainWindow::showContextMenuDirs(const QPoint &pos)
 {
-    expandFolder(ui->foldersTreeWidget->currentItem());
-
     QMenu contextMenu(tr("menu"), this);
     contextMenu.pos() = pos;
     QAction action1("Create Project", this);
@@ -173,6 +178,7 @@ void MainWindow::showContextMenuDirs(const QPoint &pos)
         actionDelete.setDisabled(true);
         actionRename.setDisabled(true);
     } else {
+        expandFolder(ui->foldersTreeWidget->currentItem());
 
         if (ui->selectedFolderLabel->text()==workingDirName) {
             actionRename.setDisabled(true);
@@ -214,12 +220,6 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
             folderPath = ".";
         }
 
-        //check if there's any file checked out(that could be checked in), on the first level of the working folder
-        if(file.size()==0) {
-            ui->checkInButton->setDisabled(true);
-        } else {
-            ui->checkInButton->setDisabled(false);
-        }
         if (file.open(QIODevice::ReadOnly)) { //QFile::open - opens the file if that exists, else creates it
             content = file.readAll();
         }
@@ -301,7 +301,7 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
             }
         }
     }
-
+    fileClicked();
 }
 
 
@@ -346,11 +346,17 @@ void MainWindow::menuFileClicked()
 //disable/enable Check In based on the number of files checked out
 void MainWindow::menuSourceSafeClicked()
 {
-    if(file.size()==0) {
-        ui->actionCheck_In->setDisabled(true);
-    } else {
-        ui->actionCheck_In->setDisabled(false);
+    ui->actionCheck_In->setDisabled(true);
+    QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
+    QTreeWidgetItem *file;
+    foreach(file, fileList) {
+        //check if file was checked out by its color (black->not checked out)
+        if(file->textColor(0).red()!=0 && file->textColor(0).green()!=0 && file->textColor(0).blue()!=0) {
+            ui->actionCheck_In->setDisabled(false);
+            break;
+        }
     }
+
 }
 
 void MainWindow::takeAction(QAction*action)
@@ -456,26 +462,30 @@ void MainWindow::folderClicked()
 }
 
 void MainWindow::fileClicked()
-{ 
+{
+    ui->checkInButton->setDisabled(true);
+    ui->editFileButton->setDisabled(true);
+    QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
+    QTreeWidgetItem *file;
+    foreach(file, fileList) {
+        //check if file was checked out by its color (black->not checked out)
+        if(file->textColor(0).red()!=0 && file->textColor(0).green()!=0 && file->textColor(0).blue()!=0) {
+            ui->checkInButton->setDisabled(false);
+            ui->editFileButton->setDisabled(false);
+            break;
+        }
+    }
+
     if (ui->filesTreeWidget->selectedItems().size()!=0) {
         ui->foldersTreeWidget->selectionModel()->clearSelection();
 
         //enable/disable Edit and View buttons based on the number of files selected
         if (ui->filesTreeWidget->selectedItems().size()==1) {
             ui->viewFileButton->setDisabled(false);
-            ui->editFileButton->setDisabled(false);
         } else {
             ui->viewFileButton->setDisabled(true);
             ui->editFileButton->setDisabled(true);
         }
-    }
-
-    //check if file was checked out by its color (black->not checked out)
-    if(ui->filesTreeWidget->currentItem()->textColor(0).red()==0 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
-        ui->checkInButton->setDisabled(true);
-        ui->editFileButton->setDisabled(true);
-    } else {
-        ui->checkInButton->setDisabled(false);
     }
 }
 
@@ -484,12 +494,12 @@ void MainWindow::fileClicked()
 void MainWindow::exportFile()
 {
 
-    qDebug() <<"workingDirPath: " << workingDirPath;
+    qDebug() <<"workingDirPath: " << ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString() << endl;
     // in case the selected folder is the top folder
     if ( ui->selectedFolderLabel->text() == workingDirName){
         exportProject(workingDirPath.toStdString() + "/", workingDirName.toStdString());
     }else{
-        exportFolder(workingDirPath.toStdString(), (ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString() + "/").toStdString());
+        exportFolder(workingDirPath.toStdString(), (ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString()+"/").toStdString());
     }
 
     showMessage("ButtonImages/success.jpg", "Message", "Project was exported");
@@ -605,6 +615,7 @@ void MainWindow::checkIn()
             }
         }
     }
+    fileClicked();
 }
 
 void MainWindow::checkOut()
@@ -636,7 +647,7 @@ void MainWindow::checkOut()
         item->setTextColor(0, checkedOutColor);
     }
 
-    ui->checkInButton->setDisabled(false);
+    fileClicked();
 }
 
 void MainWindow::selectFile()
