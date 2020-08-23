@@ -19,10 +19,11 @@ void CheckInDialog::on_okButton_clicked()
     // if the checkin commit is empty
     if (message == "" ){
         showMessage("ButtonImages/error.png", "Error", "Aborting check in due to empty message.");
-    }
+    } else {
 
-    isOkClicked = true;
-    this->close();
+        isOkClicked = true;
+        this->close();
+    }
 }
 
 QString CheckInDialog::getMessage()
