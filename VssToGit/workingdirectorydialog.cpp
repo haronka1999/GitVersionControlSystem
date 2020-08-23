@@ -81,10 +81,10 @@ void WorkingDirectoryDialog::on_createFolderButton_clicked()
 
 void WorkingDirectoryDialog::on_helpButton_clicked()
 {
-    showMessage("ButtonImages/help3.png","Help", "If you want to create a new\n repository, you need to select a folder where\n"
+    showMessage("ButtonImages/help3.png","Help", "If you want to create a new repository, you need to select a folder where"
                                                   "a new repository will be initalized.\n"
                                                   "\n"
-                                                  "In case you want to create\n a new folder,please press the Create Folder button\n"
+                                                  "In case you want to create a new folder,please press the Create Folder button"
                                                   "and the new folder will be initialized to the choosen folder.");
 }
 
