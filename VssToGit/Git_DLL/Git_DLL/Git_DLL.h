@@ -27,5 +27,5 @@ GIT_DLL_API void renameFile(string pathtoWorkingDirectory, string oldName, strin
 GIT_DLL_API bool isFileExisting(string pathtoWorkingDirectory, string fileName, string& errorMessage);
 GIT_DLL_API bool checkoutFile(string pathtoWorkingDirectory, string fileName, string& message);
 GIT_DLL_API void checkInFile(string pathtoWorkingDirectory, string fileName, string commitMessage, string& errorMessage);
-GIT_DLL_API vector<string> getFolder(string pathtoWorkingDirectory, string folderName, string& errorMessage);
+GIT_DLL_API vector<string> getFolder(string pathtoWorkingDirectory, string folderName, bool onlyFiles, string& errorMessage);
 GIT_DLL_API void getFile(string pathtoWorkingDirectory, string fileName, string& errorMessage);

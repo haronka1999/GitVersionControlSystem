@@ -3,17 +3,19 @@
 #include <limits.h>
 #include "Git_DLL.h"
 
+
 void exportProject(string pathtoWorkingDirectory, string projectName)
 {
-    string cmd = "batchfiles\\exportProject.bat " + pathtoWorkingDirectory + " " + projectName;
+    string cmd = "batchfiles\\exportProject.bat \"" + pathtoWorkingDirectory + "\" \"" + projectName +"\"";
     WinExec(cmd.c_str(), SW_HIDE);
 }
 
 void exportFolder(string pathtoWorkingDirectory, string folderName)
 {
-    string cmd = "batchfiles\\exportFolder.bat " + pathtoWorkingDirectory + " " + folderName;
+    string cmd = "batchfiles\\exportFolder.bat \"" + pathtoWorkingDirectory + "\" \"" + folderName + "\"";
     WinExec(cmd.c_str(), SW_HIDE);
 }
+
 
 void gitInit(string pathtoWorkingDirectory)
 {
@@ -23,7 +25,7 @@ void gitInit(string pathtoWorkingDirectory)
 
 void deleteFile(string pathtoWorkingDirectory, string fileName, string& errorMessage)
 {
-    string str = pathtoWorkingDirectory + " " + fileName + " 2> out.txt";
+    string str = "\"" + pathtoWorkingDirectory + "\" \"" + fileName + "\" 2> out.txt";
     wstring widestr = wstring(str.begin(), str.end());
     const wchar_t* widecstr = widestr.c_str();
     SHELLEXECUTEINFO ShExecInfo = { 0 };
@@ -47,7 +49,7 @@ void deleteFile(string pathtoWorkingDirectory, string fileName, string& errorMes
 
 void renameFile(string pathtoWorkingDirectory, string oldName, string newName, string& errorMessage)
 {
-    string str = pathtoWorkingDirectory + " " + oldName + " " + newName + " 2> out.txt";
+    string str = "\"" + pathtoWorkingDirectory + "\" \"" + oldName + "\" \"" + newName + "\" 2> out.txt";
     wstring widestr = wstring(str.begin(), str.end());
     const wchar_t* widecstr = widestr.c_str();
     SHELLEXECUTEINFO ShExecInfo = { 0 };
@@ -99,7 +101,7 @@ bool isFileExisting(string pathtoWorkingDirectory, string fileName, string& erro
 
 void checkInFile(string pathtoWorkingDirectory, string fileName, string commitMessage, string& errorMessage) {
 
-    string str = pathtoWorkingDirectory + " " + fileName + " " + commitMessage + " 2> out.txt";
+    string str = "\"" + pathtoWorkingDirectory + "\" \"" + fileName + "\" \"" + commitMessage + "\" 2> out.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
     const wchar_t* widecstr = widestr.c_str();
 
@@ -125,8 +127,7 @@ void checkInFile(string pathtoWorkingDirectory, string fileName, string commitMe
 bool checkoutFile(string pathtoWorkingDirectory, string fileName, string& message)
 {
     bool checkedOut = false;
-    string error = "";
-    string str = pathtoWorkingDirectory + " " + fileName + " 2> out.txt";
+    string str = "\"" + pathtoWorkingDirectory + "\" \"" + fileName + "\" 2> out.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
     const wchar_t* widecstr = widestr.c_str();
     
@@ -145,23 +146,14 @@ bool checkoutFile(string pathtoWorkingDirectory, string fileName, string& messag
 
     ifstream out("out.txt");
     message = string((istreambuf_iterator<char>(out)), istreambuf_iterator<char>());
-    string fatal = message.substr(0, 5);
-    // in case something goes wrong with the check out
-    if (fatal == "fatal")
-        checkedOut = false;
-    else
-        checkedOut = true;
-
     out.close();
-    cout << "checkout-message: " << message << endl;
     remove("out.txt");
-
     return checkedOut;
 }
 
-vector<string> getFolder(string pathtoWorkingDirectory, string folderName, string& errorMessage)
+vector<string> getFolder(string pathtoWorkingDirectory, string folderName, bool onlyFiles, string& errorMessage)
 {
-    string str = pathtoWorkingDirectory + " " + folderName + " > outfoldr.txt 2> outerrf.txt";
+    string str = "\"" + pathtoWorkingDirectory + "\" \"" + folderName + "\" > outfoldr.txt 2> outerrf.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
     const wchar_t* widecstr = widestr.c_str();
 
@@ -185,18 +177,38 @@ vector<string> getFolder(string pathtoWorkingDirectory, string folderName, strin
     remove("outerrf.txt");
     ifstream outfoldr("outfoldr.txt");
     string line = "";
-    int linenr = 0;
+    //the vector contains either file or folder names
+    //difference: a folder name ends with an '/'
     vector <string> files;
 
     if (errorMessage == "")
     {
-        while (getline(outfoldr, line)) {
-            files.push_back(line);
-            linenr++;
+        int dirNameLength = 0;
+        //the current folder's name needs to be removed from the lines in the result -> erase
+        if (folderName != ".") { //check if it is the first level of the working folder
+            dirNameLength = folderName.length()+1;
         }
-    }
-    else {
-        cout << "errorMessage: " << errorMessage << endl;
+
+        while (getline(outfoldr, line)) {
+            line.erase(0, dirNameLength);
+
+            //check if it is a file or a folder
+            if (line.find("/") != std::string::npos) { //folder
+                if (!onlyFiles) {
+                    size_t found = line.find("/");
+                    //first level depth names are to be shown->truncation
+                    if (found != string::npos) {
+                        line.erase(found + 1, line.length() - found - 1);
+                    }
+                    //if the folder's not already in the result vector, it shall be added
+                    if (find(files.begin(), files.end(), line) == files.end()) {
+                        files.push_back(line);
+                    }
+                }
+            } else { //file
+                files.push_back(line);
+            }
+        }
     }
 
     outfoldr.close();
@@ -208,7 +220,7 @@ void getFile(string pathtoWorkingDirectory, string fileName, string& errorMessag
 
     ifstream outerr("outerr.txt"), outfile("outfile.txt");
 
-    string str = pathtoWorkingDirectory + " " + fileName + " > outfile.txt 2> outerr.txt";
+    string str = "\"" + pathtoWorkingDirectory + "\" \"" + fileName + "\" > outfile.txt 2> outerr.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
     const wchar_t* widecstr = widestr.c_str();
 
