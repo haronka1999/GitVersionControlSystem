@@ -14,6 +14,9 @@ SelectDialog::SelectDialog(QWidget *parent) :
     connect(ui->selectButton, SIGNAL(clicked(bool)), this, SLOT(select()));
     connect(ui->deselectButton, SIGNAL(clicked(bool)), this, SLOT(deselect()));
     connect(ui->helpButton, SIGNAL(clicked(bool)), this, SLOT(showHelp()));
+
+    //removes the whatisthis hint plugin
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 }
 
 //text is sent to the mainwindow via signals, because the Select dialog is not necessarily closed after the SelectButton or the DeselectButton is clicked
@@ -42,6 +45,7 @@ void SelectDialog::enableButtons()
 void SelectDialog::showHelp()
 {
     QMessageBox msgBox;
+    msgBox.setWindowIcon(QIcon("ButtonImages/help3.png"));
     msgBox.setWindowTitle("Help");
     msgBox.setText("The Select File dialog box makes available the selection of a file by name.\n");
     msgBox.setDefaultButton(QMessageBox::Ok);

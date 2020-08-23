@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Select File</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="APIResources.qrc">
+    <normaloff>:/buttonpics/ButtonImages/select.png</normaloff>:/buttonpics/ButtonImages/select.png</iconset>
+  </property>
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
@@ -92,7 +96,9 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="APIResources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

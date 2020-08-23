@@ -16,23 +16,31 @@ AddDialog::AddDialog(QWidget *parent) :
 
     //loading folders into the treeview(right side)--------------------------------------------------------
     folderDirModel = new QFileSystemModel();
-    folderDirModel->setRootPath("");
-    folderDirModel->setFilter(QDir::Drives | QDir::AllDirs |   QDir::NoDotAndDotDot);
+    QModelIndex idx = folderDirModel->setRootPath("C:/");
+    folderDirModel->setFilter(QDir::Drives | QDir::AllDirs |  QDir::NoDotAndDotDot);
     ui->foldersTreeView->setModel(folderDirModel);
+    ui->folderNameLabel->setText("C:/");
 
     for (int i = 1; i < folderDirModel->columnCount(); ++i) {
         ui->foldersTreeView->hideColumn(i);
         ui->filesTreeView->hideColumn(i);
     }
 
-    ui->folderNameLabel->setText(folderDirModel->fileInfo(ui->foldersTreeView->currentIndex()).filePath());
+    //load files from the root path
+    fileDirModel = new QFileSystemModel();
+    fileDirModel->setFilter( QDir::Files |  QDir::NoDotAndDotDot);
+    ui->filesTreeView->setModel(fileDirModel);
+    ui->foldersTreeView->selectionModel()->select(idx, QItemSelectionModel::Select);
+    ui->foldersTreeView->setCurrentIndex(idx);
+    ui->foldersTreeView->expand(idx);
 
     //buttons----------------------------------------------------------------------------------------------
     connect(ui->addButton, SIGNAL(clicked(bool)), this, SLOT(add()));
     connect(ui->viewFileButton, SIGNAL(clicked(bool)), this, SLOT(viewFile()));
+    connect(ui->helpButton, SIGNAL(clicked(bool)), this, SLOT(showHelp()));
     connect(ui->closeButton, SIGNAL(clicked(bool)), this, SLOT(closeDialog()));
 
-    //disabled by default until file is selected (or when folder is selected)
+    //disabled by default until file is selected
     ui->viewFileButton->setEnabled(false);
     connect(ui->filesTreeView, SIGNAL(pressed(QModelIndex)), this, SLOT(changeStateViewButton()));
 
@@ -40,9 +48,11 @@ AddDialog::AddDialog(QWidget *parent) :
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 }
 
-void AddDialog::setTreeWidget(QString path, QTreeWidget* filesTree, QTreeWidgetItem *item)
+//variables and items imorted from the mainwindow(to be able to add files to the right path and widget)
+void AddDialog::setTreeWidget(QString workingFolderPath, QString pathToFolder, QTreeWidget* filesTree, QTreeWidgetItem *item)
 {
-    destinationPath = path;
+    workingDirPath = workingFolderPath;
+    destinationPath = pathToFolder;
     filesTreewidget = filesTree;
     parentFolder = item;
 }
@@ -50,16 +60,13 @@ void AddDialog::setTreeWidget(QString path, QTreeWidget* filesTree, QTreeWidgetI
 //loading files in the treeview(left side)
 void AddDialog::showFiles()
 {
-    //disabled by default until file is selected (or when folder is selected)
+    //disabled by default until file is selected
     ui->viewFileButton->setEnabled(false);
 
-    fileDirModel = new QFileSystemModel();
     QString path = folderDirModel->fileInfo(ui->foldersTreeView->currentIndex()).filePath();
     ui->folderNameLabel->setText(folderDirModel->fileInfo(ui->foldersTreeView->currentIndex()).filePath());
 
     fileDirModel->setRootPath(path);
-    fileDirModel->setFilter( QDir::Files |  QDir::NoDotAndDotDot);
-    ui->filesTreeView->setModel(fileDirModel);
     QModelIndex idx = fileDirModel->index(path);
     ui->filesTreeView->setRootIndex(idx);
 }
@@ -108,8 +115,8 @@ void AddDialog::add()
             }
         }
         else {
-            QMessageBox::information(0, "Error", "Aborting check in due to empty message.");
-        }
+            showMessage("ButtonImages/error.png", "Error",  "Aborting check in due to empty message.");
+       }
     }
 }
 
@@ -123,9 +130,15 @@ int AddDialog::fileReadyToBeUploaded(QString fileName)
     if (filesTreewidget->findItems(fileName, Qt::MatchExactly, 0).size()!=0) { //match for the name was found
 
         //consent to whether or not overwrite the file
-        QMessageBox::StandardButton reply = QMessageBox::question(this, "Error: "+ fileName, "A file named " + fileName + " already exists in in your project. Do you wish to overwrite it?", QMessageBox::Yes|QMessageBox::No);
+        QMessageBox msgBox;
+        msgBox.setWindowIcon(QIcon("ButtonImages/error.png"));
+        msgBox.setWindowTitle("Error: " + fileName);
+        msgBox.setText("A file named " + fileName + " already exists in in your project. Do you wish to overwrite it?");
+        msgBox.setStandardButtons(QMessageBox::Yes);
+        msgBox.addButton(QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::Yes);
 
-        if (reply == QMessageBox::Yes) {
+        if(msgBox.exec() == QMessageBox::Yes){
             return 1;
         } else {
             return 2;
@@ -152,20 +165,33 @@ void AddDialog::addFile(string checkinmsg)
 
             // upload file in the working directory
             //if the file already exists in the working folder, it needs to be deleted
-            QString pathToFile = destinationPath+"/"+fileName;
+            //create folder in destination
+
+            QString path;
+
+            if (destinationPath!="") {
+                path = destinationPath+"/"+fileName;
+                if (!QFile::exists(workingDirPath+"/"+destinationPath)) {
+                    QDir().mkdir(workingDirPath+"/"+destinationPath);
+                }
+            } else {
+                path = fileName;
+            }
+
+            QString pathToFile = workingDirPath + "/" + path;
             if(QFile::exists(pathToFile)) {
                 QFile::remove(pathToFile);
             }
 
-            if (!QFile::copy(fileName, pathToFile)) {
-                QMessageBox::information(0, "Error", "Unsuccesful copy into working folder.");
+            if (!QFile::copy(fileDirModel->filePath(fileind.at(i)), pathToFile)) {
+                showMessage("ButtonImages/error.png", "Error",  "Unsuccesful copy into working folder.");
             } else {
                 //if it was successfully copied, it is ready to be checked in
-                string errormsg = "";
-                checkIn("\""+destinationPath.toStdString()+"\"", ("\""+destinationPath+"/"+fileName+ "\"").toStdString(), checkinmsg, errormsg);
+                string errorMessage = "";
+                checkInFile(workingDirPath.toStdString(), path.toStdString(), checkinmsg, errorMessage);
 
-                if (errormsg!="") {
-                    QMessageBox::information(0, "Error", errormsg.c_str());
+                if (errorMessage!="") {
+                    showMessage("ButtonImages/error.png", "Error",  errorMessage.c_str());
                 } else {
                     //file is not present in the widget, so it can be added
                     if(result==0) {
@@ -182,6 +208,7 @@ void AddDialog::addFile(string checkinmsg)
     if (newFileList.size()!=0) {
         filesTreewidget->insertTopLevelItems(0, newFileList);
     }
+    showMessage("ButtonImages/success.jpg", "Message", "Done.");
 }
 
 //making sure that there's no folder in the selected folder with the exact same name
@@ -194,9 +221,16 @@ int AddDialog::folderReadyToBeUploaded(QString folderName)
 
     for(int i=0; i<childnr; i++) {
         if(parentFolder->child(i)->text(0)==folderName) { //check if there's a child folder, in the parent item, with this name
-            QMessageBox::StandardButton reply = QMessageBox::question(this, "Error: "+ folderName, "A folder named " + folderName + " already exists in in your project. Do you wish to overwrite it?", QMessageBox::Yes|QMessageBox::No);
+            //consent to whether or not overwrite the file
+            QMessageBox msgBox;
+            msgBox.setWindowIcon(QIcon("ButtonImages/error.png"));
+            msgBox.setWindowTitle("Error: " + folderName);
+            msgBox.setText("A folder named " + folderName + " already exists in in your project. Do you wish to overwrite it?");
+            msgBox.setStandardButtons(QMessageBox::Yes);
+            msgBox.addButton(QMessageBox::No);
+            msgBox.setDefaultButton(QMessageBox::Yes);
 
-            if (reply == QMessageBox::Yes) {
+            if(msgBox.exec() == QMessageBox::Yes){
                 return 1;
             } else {
                 return 2;
@@ -212,8 +246,20 @@ void AddDialog::addFolder(string checkinmsg)
     int result = folderReadyToBeUploaded(folderName);
     if(result<2) {
 
-        //create folder in destination
-        QString pathToFolder = destinationPath+"/"+folderName;
+        //create folder in destination        
+        QString path;
+        if (destinationPath!="") {
+            path = destinationPath+"/"+folderName;
+            if (!QFile::exists(workingDirPath+"/"+destinationPath)) {
+                QDir().mkdir(workingDirPath+"/"+destinationPath);
+            }
+        } else {
+            path = folderName;
+        }
+
+
+        QString pathToFolder = workingDirPath + "/" + path;
+
         if(QFile::exists(pathToFolder)) {
             QDir dir(pathToFolder);
             dir.removeRecursively();
@@ -221,13 +267,13 @@ void AddDialog::addFolder(string checkinmsg)
         QDir().mkdir(pathToFolder);
 
         //copy files from the source folder to the previously created one
-        WinExec(("Xcopy /E \""+folderName+"\" \""+pathToFolder+"\"").toStdString().c_str(), SW_HIDE);
+        WinExec(("Xcopy /E \""+folderDirModel->filePath(ui->foldersTreeView->currentIndex())+"\" \""+pathToFolder+"\"").toStdString().c_str(), SW_HIDE);
 
-        string errormsg = "";
-        checkIn("\""+destinationPath.toStdString()+"\"", ("\""+destinationPath+"/"+folderName+"\"").toStdString(), checkinmsg, errormsg);
+        string errorMessage = "";
+        checkInFile(workingDirPath.toStdString(), path.toStdString(), checkinmsg, errorMessage);
 
-        if (errormsg!="") {
-            QMessageBox::information(0, "Error", errormsg.c_str());
+        if (errorMessage!="") {
+            showMessage("ButtonImages/error.png", "Error",  errorMessage.c_str());
         } else {
             //upload new folder into the folders' treewidget
             QTreeWidgetItem *item = new QTreeWidgetItem;
@@ -243,6 +289,7 @@ void AddDialog::addFolder(string checkinmsg)
             }
         }
     }
+    showMessage("ButtonImages/success.jpg", "Message", "Done.");
 }
 
 void AddDialog::viewFile()
@@ -251,17 +298,17 @@ void AddDialog::viewFile()
 
     //check if file exists
     if (!file.exists()){
-        QMessageBox::information(0, "Error", file.errorString());
+        showMessage("ButtonImages/error.png", "Error", file.errorString());
     } else {
-
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)!=0){
             QTextStream stream(&file);
             QTextBrowser *browser = new QTextBrowser();
+            browser->setWindowIcon(QIcon("ButtonImages/viewfile1.png"));
             browser->setText(stream.readAll());
             browser->setGeometry(600, 180, 1000, 700);
             browser->show();
         } else {
-            QMessageBox::information(0, "Error", file.errorString());
+            showMessage("ButtonImages/error.png", "Error", file.errorString());
         }
 
         file.close();
@@ -270,11 +317,17 @@ void AddDialog::viewFile()
 
 void AddDialog::showHelp()
 {
+    showMessage("ButtonImages/help3.png", "Help", "The Add files dialog box provides you the opportunity\n"
+                                                  "to copy a selected file, a group of files or a directory\n"
+                                                  "into the previously selected folder of your project.\n");
+}
+
+void AddDialog::showMessage(QString iconPath, QString title, QString text)
+{
     QMessageBox msgBox;
-    msgBox.setWindowTitle("Help");
-    msgBox.setText("The Add files dialog box provides you the opportunity\n"
-                   "to copy a selected file, a group of files or a directory\n"
-                   "into the previously selected folder of your project.\n");
+    msgBox.setWindowIcon(QIcon(iconPath));
+    msgBox.setWindowTitle(title);
+    msgBox.setText(text);
     msgBox.setDefaultButton(QMessageBox::Ok);
     msgBox.exec();
 }

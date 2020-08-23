@@ -7,6 +7,9 @@ WorkingDirectoryDialog::WorkingDirectoryDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     showFolders();
+
+    //removes the whatisthis hint plugin
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 }
 
 WorkingDirectoryDialog::~WorkingDirectoryDialog()
@@ -34,9 +37,7 @@ void WorkingDirectoryDialog::on_okButton_clicked()
     std::string path = dirModel->fileInfo(ui->treeView->currentIndex()).filePath().toStdString();
     QString qPath = QString::fromStdString(path);
     if(qPath == ""){
-        QMessageBox msgBox;
-        msgBox.setText("Please select a path!");
-        msgBox.exec();
+        showMessage("ButtonImages/error.png", "Error", "Please select a path.");
         return;
     }
     pathToShow = path;
@@ -55,48 +56,44 @@ void WorkingDirectoryDialog::on_createFolderButton_clicked()
     QInputDialog *dialog = new QInputDialog();
     QString folderName = dialog->getText(this, tr("Create Folder"),
                                          tr("Folder name:"), QLineEdit::Normal,
-                                         tr("Name"), &ok);
-    if(!ok){
+                                         tr("Name"), &ok, dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+        if(!ok){
         return;
     }
 
     if (folderName.isEmpty()){
-        QMessageBox msgBox;
-        msgBox.setText("Please give a name!");
-        //msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
+        showMessage("ButtonImages/error.png", "Error", "Please give a name.");
         return;
     }
 
     qDebug() << qPath;
     if(qPath == ""){
-        QMessageBox msgBox;
-        msgBox.setText("Please select a path!");
-        msgBox.exec();
+        showMessage("ButtonImages/error.png", "Error", "Please select a path.");
         return;
     }
 
     QDir dir(qPath);
     if(!dir.mkdir(folderName)){
-        QMessageBox msgBox;
-        msgBox.setText("Error!");
-        msgBox.setDefaultButton(QMessageBox::Close);
-        msgBox.exec();
+        showMessage("ButtonImages/error.png", "Error", "Error.");
         return;
     }
 }
 
 void WorkingDirectoryDialog::on_helpButton_clicked()
 {
+    showMessage("ButtonImages/help3.png","Help", "If you want to create a new\n repository, you need to select a folder where\n"
+                                                  "a new repository will be initalized.\n"
+                                                  "\n"
+                                                  "In case you want to create\n a new folder,please press the Create Folder button\n"
+                                                  "and the new folder will be initialized to the choosen folder.");
+}
+
+void WorkingDirectoryDialog::showMessage(QString iconPath, QString title, QString text)
+{
     QMessageBox msgBox;
-    msgBox.setWindowTitle("Help");
-    msgBox.setText("If you want to create a new\n repository,\n you need to select a folder\n"
-                   "where a new repository will be initalized.\n"
-                   "\n"
-                   "In case you want to create\n a new folder,\n"
-                   "please press the Create Folder button\n"
-                   "and the new folder will be initialized\n"
-                   "to the choosen folder.");
+    msgBox.setWindowIcon(QIcon(iconPath));
+    msgBox.setWindowTitle(title);
+    msgBox.setText(text);
     msgBox.setDefaultButton(QMessageBox::Ok);
     msgBox.exec();
 }

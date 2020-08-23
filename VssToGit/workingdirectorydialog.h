@@ -37,14 +37,15 @@ class WorkingDirectoryDialog : public QDialog
 public:
     explicit WorkingDirectoryDialog(QWidget *parent = nullptr);
     ~WorkingDirectoryDialog();
-    void showFolders();
     string pathToShow;
     bool isOkClicked = false;
+    void showMessage(QString, QString, QString);
+    void showFolders();
+
 private slots:
     void on_okButton_clicked();
     void on_createFolderButton_clicked();
     void on_helpButton_clicked();
-
     void on_cancelButton_clicked();
 
 private:

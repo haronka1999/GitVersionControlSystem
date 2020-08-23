@@ -47,11 +47,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    int columncount = 1;
-    QColor *col = new QColor(113, 44, 165);
+    QColor checkedOutColor;
     QString workingDirPath = "";
     QString workingDirName = "";
     QString oldName = "";
+    QFile file;
+    void showMessage(QString, QString, QString);
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
@@ -61,23 +62,20 @@ private:
     QFileSystemModel *fileModel;
 
 public slots:
-    void ShowContextMenuFiles(const QPoint &pos);
-    void ShowContextMenuDirs(const QPoint &pos);
+    void showContextMenuFiles(const QPoint &pos);
+    void showContextMenuDirs(const QPoint &pos);
     void expandFolder(QTreeWidgetItem *);
     void menuEditClicked();
     void menuFileClicked();
     void menuSourceSafeClicked();
     void takeAction(QAction *);
-    void changeButtons();
     void getSelectedName(QString);
     void getDeselectedName(QString);
-    void deselectFiles();
-    void deselectFolder();
-    void askForCheckIn();
+    void fileClicked();
+    void folderClicked();
 
     //action-----------------------------------
     void exportFile();
-    void createProject();
     void addFiles();
     void setWorkingFolder();
     void checkIn();

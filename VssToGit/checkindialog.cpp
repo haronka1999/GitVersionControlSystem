@@ -7,6 +7,9 @@ CheckInDialog::CheckInDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     connect(ui->helpButton, SIGNAL(clicked(bool)), this, SLOT(showHelp()));
+
+    //removes the whatisthis hint plugin
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 }
 
 void CheckInDialog::on_okButton_clicked()
@@ -15,14 +18,10 @@ void CheckInDialog::on_okButton_clicked()
 
     // if the checkin commit is empty
     if (message == "" ){
-        QMessageBox msgBox;
-        msgBox.setText("Please add a comment!\t");
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
-        return;
+        showMessage("ButtonImages/error.png", "Error", "Aborting check in due to empty message.");
     }
 
-    okClicked = true;
+    isOkClicked = true;
     this->close();
 }
 
@@ -39,9 +38,15 @@ void CheckInDialog::on_cancelButton_clicked()
 
 void CheckInDialog::showHelp()
 {
+    showMessage("ButtonImages/help3.png", "Help", "Saves the changes of the selected files or folder to the database, with comment.\n");
+}
+
+void CheckInDialog::showMessage(QString iconPath, QString title, QString text)
+{
     QMessageBox msgBox;
-    msgBox.setWindowTitle("Help");
-    msgBox.setText("Saves the changes of the selected files or folder to the database, with comment.\n");
+    msgBox.setWindowIcon(QIcon(iconPath));
+    msgBox.setWindowTitle(title);
+    msgBox.setText(text);
     msgBox.setDefaultButton(QMessageBox::Ok);
     msgBox.exec();
 }

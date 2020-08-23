@@ -23,13 +23,14 @@ class AddDialog : public QDialog
     Q_OBJECT
 
 public:
-    QString destinationPath;
+    QString destinationPath, workingDirPath;
     QTreeWidget* filesTreewidget;
     QTreeWidget* foldersTreewidget;
     QTreeWidgetItem *parentFolder;
-    void setTreeWidget(QString, QTreeWidget*, QTreeWidgetItem*);
+    void setTreeWidget(QString, QString, QTreeWidget*, QTreeWidgetItem*);
     int fileReadyToBeUploaded(QString);
     int folderReadyToBeUploaded(QString);
+    void showMessage(QString, QString, QString);
     explicit AddDialog(QWidget *parent = nullptr);
     ~AddDialog();
 

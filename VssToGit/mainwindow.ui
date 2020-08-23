@@ -21,6 +21,10 @@
   <property name="windowTitle">
    <string>VSS -&gt; Git API</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="APIResources.qrc">
+    <normaloff>:/buttonpics/ButtonImages/mainwindow.PNG</normaloff>:/buttonpics/ButtonImages/mainwindow.PNG</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QPushButton" name="addFilesButton">
     <property name="geometry">
@@ -783,6 +787,8 @@ selection-color: rgb(85, 85, 127);</string>
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="APIResources.qrc"/>
+ </resources>
  <connections/>
 </ui>

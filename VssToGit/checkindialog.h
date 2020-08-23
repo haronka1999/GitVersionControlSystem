@@ -16,9 +16,10 @@ class CheckInDialog : public QDialog
 public:
     explicit CheckInDialog(QWidget *parent = nullptr);
     QString message;
+    bool isOkClicked = false;
+    void showMessage(QString, QString, QString);
     QString getMessage();
     ~CheckInDialog();
-    bool okClicked = false;
 
 private:
     Ui::checkInDialog *ui;

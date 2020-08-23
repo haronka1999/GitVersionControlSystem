@@ -6,12 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>839</width>
-    <height>458</height>
+    <width>823</width>
+    <height>440</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="APIResources.qrc">
+    <normaloff>:/buttonpics/ButtonImages/addfile3.png</normaloff>:/buttonpics/ButtonImages/addfile3.png</iconset>
   </property>
   <widget class="QPushButton" name="viewFileButton">
    <property name="geometry">
@@ -25,6 +29,9 @@
    <property name="text">
     <string>View</string>
    </property>
+   <property name="autoDefault">
+    <bool>false</bool>
+   </property>
   </widget>
   <widget class="QPushButton" name="helpButton">
    <property name="geometry">
@@ -37,6 +44,9 @@
    </property>
    <property name="text">
     <string>Help</string>
+   </property>
+   <property name="autoDefault">
+    <bool>false</bool>
    </property>
   </widget>
   <widget class="QLabel" name="label">
@@ -110,6 +120,9 @@
    <property name="text">
     <string>Add</string>
    </property>
+   <property name="autoDefault">
+    <bool>false</bool>
+   </property>
   </widget>
   <widget class="QPushButton" name="closeButton">
    <property name="geometry">
@@ -123,8 +136,13 @@
    <property name="text">
     <string>Close</string>
    </property>
+   <property name="autoDefault">
+    <bool>false</bool>
+   </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="APIResources.qrc"/>
+ </resources>
  <connections/>
 </ui>
