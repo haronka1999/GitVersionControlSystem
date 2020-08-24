@@ -51,7 +51,9 @@ public:
     QString workingDirPath = "";
     QString workingDirName = "";
     QString oldName = "";
-    QFile file;
+    QFile vssFile;
+    QTextEdit *fileEditor;
+    int filesColumnCount = 2;
     void showMessage(QString, QString, QString);
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -91,7 +93,6 @@ public slots:
     void refreshWidgets();
     void help();
     void savePressed();
-
 };
 
 #endif // MAINWINDOW_H

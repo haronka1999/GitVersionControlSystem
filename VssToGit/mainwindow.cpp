@@ -4,14 +4,9 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , checkedOutColor(113, 44, 255)
+    , checkedOutColor(255, 0, 0)
 {
     ui->setupUi(this);
-
-    //first column-displayed basename
-    //second column-path from working folder to the selected folder(hidden)
-    ui->foldersTreeWidget->setColumnCount(2);
-    ui->foldersTreeWidget->hideColumn(1);
 
     //disable or enable tabs on the menu when abou to show
     connect(ui->menuEdit, SIGNAL(aboutToShow()), this, SLOT(menuEditClicked()));
@@ -22,10 +17,17 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->menuBar, SIGNAL(triggered(QAction*)), this, SLOT(takeAction(QAction*)));
 
     //default settings for the treewidgets---------------------------------------------------
+    ui->foldersTreeWidget->setColumnCount(2);
+    ui->foldersTreeWidget->hideColumn(1);
+
     ui->checkInButton->setDisabled(true);
     ui->actionCheck_In->setDisabled(true);
-    ui->filesTreeWidget->setHeaderLabel("Name");
-    ui->foldersTreeWidget->setHeaderLabel("Name");
+    QStringList columnNames;
+    columnNames.push_back("File Name");
+    columnNames.push_back("Check Out Folder");
+    ui->filesTreeWidget->setHeaderLabels(columnNames);
+    ui->filesTreeWidget->setColumnWidth(0, 300);
+    ui->foldersTreeWidget->setHeaderLabel("Folder Name");
     ui->filesTreeWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->foldersTreeWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
@@ -69,11 +71,6 @@ MainWindow::MainWindow(QWidget *parent)
 //context menu for files widget
 void MainWindow::showContextMenuFiles(const QPoint &pos)
 {
-    //if no file was selected, the first one gets focus on
-    if (ui->filesTreeWidget->selectedItems().size()==0) {
-        ui->filesTreeWidget->setItemSelected(ui->filesTreeWidget->itemAt(QPoint(0,0)), true);
-    }
-
     QMenu contextMenu(tr("menu"), this);
     contextMenu.pos() = pos;
 
@@ -108,33 +105,34 @@ void MainWindow::showContextMenuFiles(const QPoint &pos)
     //activating actions------------------------------------------------------------------------
 
     //if there's no file to display->disable actions
-    if (!ui->filesTreeWidget->currentItem()) {
+    if (ui->filesTreeWidget->topLevelItemCount()==0) {
         actionCheckIn.setDisabled(true);
         actionCheckOut.setDisabled(true);
         actionEdit.setDisabled(true);
         actionView.setDisabled(true);
         actionDelete.setDisabled(true);
         actionRename.setDisabled(true);
+
     } else {
+        //if no file was selected, the first one gets focus on
 
-        actionEdit.setDisabled(true);
-        actionCheckIn.setDisabled(true);
-        QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
-        QTreeWidgetItem *file;
-        foreach(file, fileList) {
-            //check if file was checked out by its color (black->not checked out)
-            if(file->textColor(0).red()!=0 && file->textColor(0).green()!=0 && file->textColor(0).blue()!=0) {
-                actionEdit.setDisabled(false);
-                actionCheckIn.setDisabled(false);
-                break;
+        int fileNr = ui->filesTreeWidget->selectedItems().size();
+        //multiple files -> checkin, checkout enabled; rename, view, edit disabled
+        if (fileNr==0) {
+            ui->filesTreeWidget->setItemSelected(ui->filesTreeWidget->itemAt(QPoint(0,0)), true);
+        } else {
+            if (fileNr!=1) {
+                actionEdit.setDisabled(true);
+                actionView.setDisabled(true);
+                actionRename.setDisabled(true);
+            } else {
+                if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) { //file is checked out
+                    actionCheckOut.setDisabled(true);
+                } else {
+                    actionCheckIn.setDisabled(true);
+                    actionEdit.setDisabled(true);
+                }
             }
-        }
-
-        //check whether or not only one file is selected, because can't open, edit or rename mutiple at the same time
-        if (ui->filesTreeWidget->selectedItems().size()!=1) {
-            actionEdit.setDisabled(true);
-            actionView.setDisabled(true);
-            actionRename.setDisabled(true);
         }
     }
     contextMenu.exec(mapToParent(ui->filesTreeWidget->pos()+pos));
@@ -171,7 +169,7 @@ void MainWindow::showContextMenuDirs(const QPoint &pos)
     contextMenu.addAction(&actionRename);
 
     //if there's no content to display->disable actions
-    if (ui->foldersTreeWidget->selectedItems().size()==0) {
+    if (ui->foldersTreeWidget->topLevelItemCount()==0) {
         actionCheckIn.setDisabled(true);
         actionCheckOut.setDisabled(true);
         actionExport.setDisabled(true);
@@ -180,6 +178,7 @@ void MainWindow::showContextMenuDirs(const QPoint &pos)
     } else {
         expandFolder(ui->foldersTreeWidget->currentItem());
 
+        //the working folder can't be renamed or deleted
         if (ui->selectedFolderLabel->text()==workingDirName) {
             actionRename.setDisabled(true);
             actionDelete.setDisabled(true);
@@ -220,10 +219,10 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
             folderPath = ".";
         }
 
-        if (file.open(QIODevice::ReadOnly)) { //QFile::open - opens the file if that exists, else creates it
-            content = file.readAll();
+        if (vssFile.open(QIODevice::ReadOnly)) { //QFile::open - opens the file if that exists, else creates it
+            content = vssFile.readAll();
         }
-        file.close();
+        vssFile.close();
 
         //if folder was already expanded, only the filestreewidget needs update
         if (parentItem->childCount()==0) {
@@ -233,7 +232,7 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
                 showMessage("ButtonImages/error.png", "Error", errorMessage.c_str());
             } else {
 
-                 //looping through the vector of names
+                //looping through the vector of names
                 for(int i = 0; i < files.size(); i++){
 
                     line = QString::fromStdString(files[i]);
@@ -244,15 +243,21 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
 
                         item->setText(0, line);
                         ui->filesTreeWidget->addTopLevelItem(item);
+                        QString pathToDestination;
                         QString filePath;
                         //check if current folder is the working folder itself or not
                         if (ui->selectedFolderLabel->text()!=workingDirName) {
-                            filePath = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString()+"/"+line;
+                            pathToDestination = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString()+"/";
+                            filePath = pathToDestination+line;
                         } else {
+                            pathToDestination = "";
                             filePath = line;
                         }
                         if(content.contains("\"" + filePath + "\"")) {
-                            item->setTextColor(0, checkedOutColor);
+                            item->setText(1, workingDirPath+"/"+pathToDestination);
+                            for(int j=0; j<filesColumnCount; j++) {
+                                item->setTextColor(j, checkedOutColor);
+                            }
                         }
 
                     } else {
@@ -286,15 +291,21 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
                     item->setText(0, line);
                     ui->filesTreeWidget->addTopLevelItem(item);
 
+                    QString pathToDestination;
                     QString filePath;
                     //check if current folder is the working folder itself or not
                     if (ui->selectedFolderLabel->text()!=workingDirName) {
-                        filePath = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString()+"/"+line;
+                        pathToDestination = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString()+"/";
+                        filePath = pathToDestination+line;
                     } else {
+                        pathToDestination = "";
                         filePath = line;
                     }
                     if(content.contains("\"" + filePath + "\"")) {
-                        item->setTextColor(0, checkedOutColor);
+                        item->setText(1, workingDirPath+"/"+pathToDestination);
+                        for(int j=0; j<filesColumnCount; j++) {
+                            item->setTextColor(j, checkedOutColor);
+                        }
                     }
 
                 }
@@ -313,10 +324,10 @@ void MainWindow::menuEditClicked()
         ui->actionView_File->setDisabled(true);
     } else {
         //check if file was checked out by its color (black->not checked out)
-        if(ui->filesTreeWidget->currentItem()->textColor(0).red()==0 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
-            ui->actionEdit_File->setDisabled(true);
-        } else {
+        if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
             ui->actionEdit_File->setDisabled(false);
+        } else {
+            ui->actionEdit_File->setDisabled(true);
         }
         ui->actionView_File->setDisabled(false);
     }
@@ -346,14 +357,31 @@ void MainWindow::menuFileClicked()
 //disable/enable Check In based on the number of files checked out
 void MainWindow::menuSourceSafeClicked()
 {
-    ui->actionCheck_In->setDisabled(true);
     QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
-    QTreeWidgetItem *file;
-    foreach(file, fileList) {
-        //check if file was checked out by its color (black->not checked out)
-        if(file->textColor(0).red()!=0 && file->textColor(0).green()!=0 && file->textColor(0).blue()!=0) {
+    int fileNr = fileList.size();
+    if(fileNr>1) {
+        ui->actionCheck_In->setDisabled(true);
+        QTreeWidgetItem *file;
+        foreach(file, fileList) {
+            //check if file was checked out by its color (black->not checked out)
+            if(file->textColor(0).red()==255 && file->textColor(0).green()==0 && file->textColor(0).blue()==0) {
+                ui->actionCheck_In->setDisabled(false);
+                break;
+            }
+        }
+
+    } else {
+        if(fileNr==1) {
+            if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
+                ui->actionCheck_Out->setDisabled(true);
+                ui->actionCheck_In->setDisabled(false);
+            } else {
+                ui->actionCheck_Out->setDisabled(false);
+                ui->actionCheck_In->setDisabled(true);
+            }
+        } else {
+            ui->actionCheck_Out->setDisabled(false);
             ui->actionCheck_In->setDisabled(false);
-            break;
         }
     }
 
@@ -452,27 +480,43 @@ void MainWindow::folderClicked()
     ui->filesTreeWidget->selectionModel()->clearSelection();
     ui->viewFileButton->setDisabled(true);
     ui->editFileButton->setDisabled(true);
+    ui->checkInButton->setDisabled(true);
 
-    //check if there's any file checked out(that could be checked in), on the first level of the working folder
-    if(file.size()==0) {
-        ui->checkInButton->setDisabled(true);
-    } else {
-        ui->checkInButton->setDisabled(false);
+    int nr = ui->filesTreeWidget->topLevelItemCount();
+    for(int i=0; i<nr; i++) {
+        //check if file was checked out by its color (black->not checked out)
+        if(ui->filesTreeWidget->topLevelItem(i)->textColor(0).red()==255 && ui->filesTreeWidget->topLevelItem(i)->textColor(0).green()==0 && ui->filesTreeWidget->topLevelItem(i)->textColor(0).blue()==0) {
+            ui->checkInButton->setDisabled(false);
+            break;
+        }
     }
 }
 
 void MainWindow::fileClicked()
 {
-    ui->checkInButton->setDisabled(true);
-    ui->editFileButton->setDisabled(true);
-    QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
-    QTreeWidgetItem *file;
-    foreach(file, fileList) {
-        //check if file was checked out by its color (black->not checked out)
-        if(file->textColor(0).red()!=0 && file->textColor(0).green()!=0 && file->textColor(0).blue()!=0) {
-            ui->checkInButton->setDisabled(false);
-            ui->editFileButton->setDisabled(false);
-            break;
+    //check whether or not only one file is selected, because can't open, edit or rename mutiple at the same time
+    if (ui->filesTreeWidget->selectedItems().size()!=1) {
+        ui->editFileButton->setDisabled(true);
+        ui->viewFileButton->setDisabled(true);
+
+        QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
+        QTreeWidgetItem *file;
+        foreach(file, fileList) {
+            //check if file was checked out by its color (black->not checked out)
+            if(file->textColor(0).red()==255 && file->textColor(0).green()==0 && file->textColor(0).blue()==0) {
+                ui->checkInButton->setDisabled(false);
+                break;
+            }
+        }
+    } else {
+        if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
+           ui->checkOutButton->setDisabled(true);
+           ui->checkInButton->setDisabled(false);
+           ui->editFileButton->setDisabled(false);
+        } else {
+            ui->checkOutButton->setDisabled(false);
+            ui->checkInButton->setDisabled(true);
+            ui->editFileButton->setDisabled(true);
         }
     }
 
@@ -494,12 +538,11 @@ void MainWindow::fileClicked()
 void MainWindow::exportFile()
 {
 
-    qDebug() <<"workingDirPath: " << ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString() << endl;
     // in case the selected folder is the top folder
     if ( ui->selectedFolderLabel->text() == workingDirName){
         exportProject(workingDirPath.toStdString() + "/", workingDirName.toStdString());
     }else{
-        exportFolder(workingDirPath.toStdString(), (ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString()+"/").toStdString());
+        exportFolder(workingDirPath.toStdString() + "/", (ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()).last().toString()).toStdString().erase(0,1));
     }
 
     showMessage("ButtonImages/success.jpg", "Message", "Project was exported");
@@ -510,6 +553,7 @@ void MainWindow::addFiles()
     //first check if there's a working folder selected
     if (workingDirPath!="") {
         AddDialog *dialog = new AddDialog;
+        QString destinationPath;
 
         //passing the widgets over to the dialog in order to examine whether or not a file or folder is already added to the project and to be able to upload the new items
         QTreeWidgetItem* parentItem;
@@ -520,7 +564,14 @@ void MainWindow::addFiles()
         } else {
             parentItem = ui->foldersTreeWidget->selectedItems()[0];
         }
-        dialog->setTreeWidget(workingDirPath, ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString(), ui->filesTreeWidget, parentItem);
+
+        //check if current folder is the working folder itself or not
+        if (ui->selectedFolderLabel->text()!=workingDirName) {
+            destinationPath = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString();
+        } else {
+            destinationPath = "";
+        }
+        dialog->setTreeWidget(workingDirPath, destinationPath, ui->filesTreeWidget, parentItem);
 
         setDisabled(true);
         dialog->show();
@@ -547,10 +598,10 @@ void MainWindow::setWorkingFolder()
         workingDirName = path.splitRef("/").last().toString();
         ui->workingDirLabel->setText(workingDirName);
         //setting the path to the vss db file
-        file.setFileName(workingDirPath+"/"+"vss.zsu");
+        vssFile.setFileName(workingDirPath+"/"+"vss.zsu");
         //creates file if it doesn't exist
-        if (file.open(QIODevice::ReadWrite) ){}
-        file.close();
+        if (vssFile.open(QIODevice::ReadWrite) ){}
+        vssFile.close();
 
         //adding the working folder to the widget
         QTreeWidget *tree = ui->foldersTreeWidget;
@@ -589,6 +640,7 @@ void MainWindow::checkIn()
                     filePath = fileList[i]->text(0);
                 }
                 fileList[i]->setTextColor(0, QColor(0, 0, 0));
+                fileList[i]->setText(1, "");
                 checkInFile(workingDirPath.toStdString(), filePath.toStdString(), commitMessage, errorMessage);
                 if (errorMessage != ""){
                     showMessage("ButtonImages/error.png", "Error", errorMessage.c_str());
@@ -608,6 +660,7 @@ void MainWindow::checkIn()
                     filePath = ui->filesTreeWidget->topLevelItem(i)->text(0);
                 }
                 ui->filesTreeWidget->topLevelItem(i)->setTextColor(0, QColor(0, 0, 0));
+                ui->filesTreeWidget->topLevelItem(i)->setText(1, "");
                 checkInFile(workingDirPath.toStdString(), filePath.toStdString(), commitMessage, errorMessage);
                 if (errorMessage != ""){
                     showMessage("ButtonImages/error.png", "Error", errorMessage.c_str());
@@ -644,7 +697,10 @@ void MainWindow::checkOut()
 
         //calling the bat file to be executed
         checkoutFile(workingDirPath.toStdString(), name.toStdString(), errorMessage);
-        item->setTextColor(0, checkedOutColor);
+        item->setText(1, workingDirPath+"/"+filePath);
+        for(int j=0; j<filesColumnCount; j++) {
+            item->setTextColor(j, checkedOutColor);
+        }
     }
 
     fileClicked();
@@ -682,34 +738,70 @@ void MainWindow::editFile()
     } else {
         QString pth = "outfile.txt";
         QFile file(pth);
-        QTextEdit *browser = new QTextEdit();
+        fileEditor = new QTextEdit();
         if (file.open(QIODevice::ReadWrite | QIODevice::Text)){
             QTextStream stream(&file);
-            browser->setText(stream.readAll());
-            browser->setWindowIcon(QIcon("ButtonImages/editfile1.png"));
-            browser->setGeometry(700,180,1000,700);
-            browser->show();
-            browser->setWindowState(Qt::WindowState::WindowActive);
-        }
-        connect(browser, SIGNAL(textChanged()),this,SLOT(askForCheckIn()));
-
-        QShortcut *shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), browser);
-        connect(shortcut, SIGNAL(activated()), this, SLOT(savePressed()));
+            fileEditor->setText(stream.readAll());
+            fileEditor->setWindowIcon(QIcon("ButtonImages/editfile1.png"));
+            fileEditor->setWindowTitle(ui->filesTreeWidget->currentItem()->text(0));
+            fileEditor->setGeometry(700,180,1000,700);
+            fileEditor->show();
+            fileEditor->setWindowState(Qt::WindowState::WindowActive);
+            QShortcut *shortcut = new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_S), fileEditor);
+            connect(shortcut, SIGNAL(activated()), this, SLOT(savePressed()));
+        }        
     }
 }
 
 void MainWindow::savePressed()
 {
+    QString fileName = ui->filesTreeWidget->currentItem()->text(0);
+    QString filePath;
+    string commitMessage, errorMessage = "";
     QMessageBox msgBox;
+    //check if current folder is the working folder itself or not
+    if (ui->selectedFolderLabel->text()!=workingDirName) {
+        filePath = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString()+"/"+fileName;
+    } else {
+        filePath = fileName;
+    }
     msgBox.setWindowIcon(QIcon("ButtonImages/error.png"));
     msgBox.setWindowTitle("Confirm");
-    msgBox.setText("Are you sure want to save and commit?\t");
+    msgBox.setText("Are you sure want to save and checkIn?\t");
     msgBox.setStandardButtons(QMessageBox::Yes);
     msgBox.addButton(QMessageBox::No);
-
-    if(msgBox.exec() == QMessageBox::Yes){
-        checkIn();
-    }else {
+    if (msgBox.exec() == QMessageBox::Yes){
+        CheckInDialog dialog;
+        dialog.setModal(true);
+        string errorMessage = "", commitMessage;
+        dialog.exec();
+        if (dialog.isOkClicked){
+            string commitMessage = dialog.getMessage().toStdString();
+            // this fileName cannot be changed, it's generated by the DLL
+            QString pth = "outfile.txt";
+            QFile file(pth);
+            if (file.open(QIODevice::ReadWrite | QIODevice::Text)){
+                file.write(fileEditor->toPlainText().toStdString().c_str());
+                file.rename(ui->filesTreeWidget->currentItem()->text(0));
+                file.close();
+            }
+            QString currentPath = QDir::currentPath()+ "/" + (ui->filesTreeWidget->currentItem()->text(0));
+            QString destinationPath = workingDirPath + "/" + ui->filesTreeWidget->currentItem()->text(0);
+            QFile destinationFile(destinationPath);
+            if (destinationFile.exists()){
+                destinationFile.remove();
+            }
+            if (!QFile::copy(currentPath, destinationPath)){
+                showMessage("ButtonImages/error.png", "Error", "Error - file copy");
+            }
+            checkInFile(workingDirPath.toStdString(), filePath.toStdString(), commitMessage, errorMessage);
+            if (errorMessage != ""){
+                showMessage("ButtonImages/error.png", "Error", errorMessage.c_str());
+            }else{
+                showMessage("ButtonImages/success.jpg", "Message", "Check In success");
+            }
+        }
+    } else {
         msgBox.close();
     }
 }
@@ -778,7 +870,12 @@ void MainWindow::deleteSelected()
         if (errorMessage!="") {
             showMessage("ButtonImages/error.png", "Error", errorMessage.c_str());
         } else {
-            delete folder;
+            folder->parent()->setExpanded(true);
+            ui->foldersTreeWidget->setCurrentItem(folder->parent());
+            folder->parent()->setSelected(true);
+            emit expandFolder(folder->parent());
+            folderClicked();
+            delete folder;      
         }
         ui->filesTreeWidget->clear();
     }
@@ -846,6 +943,7 @@ void MainWindow::renameFolderFinished(QTreeWidgetItem * item)
     if (errorMessage!="") {
         showMessage("ButtonImages/error.png", "Error", errorMessage.c_str());
     }
+    ui->selectedFolderLabel->setText(workingDirName+"/"+pathStr);
     item->setText(1, pathStr);
     item->setFlags(item->flags() & ~Qt::ItemIsEditable);
     ui->foldersTreeWidget->blockSignals(false);
@@ -870,6 +968,7 @@ void MainWindow::refreshWidgets()
         }
 
 
+
         QString line, content;
         string errorMessage = "";
         QString folderPath;
@@ -881,6 +980,7 @@ void MainWindow::refreshWidgets()
         }
         vector<string> files = getFolder(workingDirPath.toStdString(), folderPath.toStdString(), false, errorMessage); //vector containing the file and folder names
 
+        foreach(auto i, parentItem->takeChildren()) delete i;
         ui->filesTreeWidget->clear();
 
 
@@ -888,17 +988,17 @@ void MainWindow::refreshWidgets()
             QMessageBox::information(0, "Error", errorMessage.c_str());
         } else {
             //check if there's any file checked out(that could be checked in), on the first level of the working folder
-            if(file.size()==0) {
+            if(vssFile.size()==0) {
                 ui->checkInButton->setDisabled(true);
             } else {
                 ui->checkInButton->setDisabled(false);
             }
 
-            if (file.open(QIODevice::ReadOnly)) { //QFile::open - opens the file if that exists, else creates it
-                content = file.readAll();
+            if (vssFile.open(QIODevice::ReadOnly)) { //QFile::open - opens the file if that exists, else creates it
+                content = vssFile.readAll();
             }
 
-            file.close();
+            vssFile.close();
 
             //looping through the vector of names
             for(int i = 0; i < files.size(); i++){
@@ -909,45 +1009,38 @@ void MainWindow::refreshWidgets()
                 //check if it's a file or a folder
                 if(!line.contains('/')) {
 
-                    if(ui->filesTreeWidget->findItems(line, Qt::MatchExactly, 0).size()==0){
-                        item->setText(0, line);
-                        ui->filesTreeWidget->addTopLevelItem(item);
-                        QString filePath;
-                        //check if current folder is the working folder itself or not
-                        if (ui->selectedFolderLabel->text()!=workingDirName) {
-                            filePath = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString()+"/"+line;
-                        } else {
-                            filePath = line;
-                        }
-                        if(content.contains("\"" + filePath + "\"")) {
-                            item->setTextColor(0, checkedOutColor);
+                    item->setText(0, line);
+                    ui->filesTreeWidget->addTopLevelItem(item);
+                    QString pathToDestination;
+                    QString filePath;
+                    //check if current folder is the working folder itself or not
+                    if (ui->selectedFolderLabel->text()!=workingDirName) {
+                        pathToDestination = ui->selectedFolderLabel->text().splitRef(workingDirPath.splitRef("/").last().toString()+"/").last().toString()+"/";
+                        filePath = pathToDestination+line;
+                    } else {
+                        pathToDestination = "";
+                        filePath = line;
+                    }
+                    if(content.contains("\"" + filePath + "\"")) {
+                        item->setText(1, workingDirPath+"/"+pathToDestination);
+                        for(int j=0; j<filesColumnCount; j++) {
+                            item->setTextColor(j, checkedOutColor);
                         }
                     }
-
 
                 } else {
                     //                  //handling possible folders
                     QString name = line.splitRef("/").first().toString(); //directory name
 
-                    int nr = parentItem->childCount();
-                    bool exists = false;
-                    for(int i=0; i<nr; i++) {
-                        if(parentItem->child(i)->text(0)==name){
-                            exists =  true;
-                            break;
-                        }
+                    item->setText(0, name);
+                    //second hidden column helps keep track of the folder's path
+                    if(parentItem->parent()) {
+                        item->setText(1, parentItem->text(1)+"/"+name);
+                    } else {
+                        item->setText(1, name);
                     }
+                    parentItem->addChild(item);
 
-                    if(!exists){
-                        item->setText(0, name);
-                        //second hidden column helps keep track of the folder's path
-                        if(parentItem->parent()) {
-                            item->setText(1, parentItem->text(1)+"/"+name);
-                        } else {
-                            item->setText(1, name);
-                        }
-                        parentItem->addChild(item);
-                    }
 
                 }
             }
@@ -958,17 +1051,17 @@ void MainWindow::refreshWidgets()
 void MainWindow::help()
 {
     showMessage("ButtonImages/help3.png", "Help", "\t Software Description"
-                                                         "\n"
-                                                         "\n"
-                                                         "This QUI provides the same functionalities\n"
-                                                         "as the old Visual Source Safe version\n"
-                                                         "control system but it works under Git."
-                                                         "\n\n"
-                                                         "......................................\n\n"
-                                                         "Credits: Accenture\n"
-                                                         "Date: 2020.08.28\n\n"
-                                                         "Creators: Magyari Zsuzsanna\n"
-                                                         "\tHorvath Aron\n\n");
+                                                  "\n"
+                                                  "\n"
+                                                  "This QUI provides the same functionalities\n"
+                                                  "as the old Visual Source Safe version\n"
+                                                  "control system but it works under Git."
+                                                  "\n\n"
+                                                  "......................................\n\n"
+                                                  "Credits: Accenture\n"
+                                                  "Date: 2020.08.28\n\n"
+                                                  "Creators: Magyari Zsuzsanna\n"
+                                                  "\tHorvath Aron\n\n");
 }
 
 void MainWindow::showMessage(QString iconPath, QString title, QString text)

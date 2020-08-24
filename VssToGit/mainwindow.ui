@@ -631,7 +631,6 @@ selection-color: rgb(85, 85, 127);</string>
      <string>File</string>
     </property>
     <addaction name="actionAdd_files"/>
-    <addaction name="actionExport"/>
     <addaction name="separator"/>
     <addaction name="actionDelete"/>
     <addaction name="actionRename"/>
@@ -779,11 +778,6 @@ selection-color: rgb(85, 85, 127);</string>
   <action name="actionRename">
    <property name="text">
     <string>Rename</string>
-   </property>
-  </action>
-  <action name="actionExport">
-   <property name="text">
-    <string>Export</string>
    </property>
   </action>
  </widget>
