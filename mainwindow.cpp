@@ -602,6 +602,7 @@ void MainWindow::setWorkingFolder()
         topLevel->setText(0, workingDirName);
         topLevel->setText(1, "");
         tree->addTopLevelItem(topLevel);
+        tree->setCurrentItem(topLevel);
         topLevel->setSelected(true);
 
         //loading first depth files and folders into the widgets
@@ -865,6 +866,7 @@ void MainWindow::deleteSelected()
         } else {
             folder->parent()->setExpanded(true);
             ui->foldersTreeWidget->setCurrentItem(folder->parent());
+            ui->filesTreeWidget->setCurrentItem(folder->parent());
             folder->parent()->setSelected(true);
             emit expandFolder(folder->parent());
             folderClicked();
