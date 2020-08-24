@@ -376,10 +376,6 @@ void MainWindow::menuSourceSafeClicked()
 
 void MainWindow::takeAction(QAction*action)
 {
-    if(action->objectName().toStdString()=="actionExport"){
-        return exportFile();
-    }
-
     if(action->objectName().toStdString()=="actionSelect"){
         return selectFile();
     }
