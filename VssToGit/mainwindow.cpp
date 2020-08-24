@@ -20,8 +20,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->foldersTreeWidget->setColumnCount(2);
     ui->foldersTreeWidget->hideColumn(1);
 
-    ui->checkInButton->setDisabled(true);
-    ui->actionCheck_In->setDisabled(true);
     QStringList columnNames;
     columnNames.push_back("File Name");
     columnNames.push_back("Check Out Folder");
@@ -54,6 +52,8 @@ MainWindow::MainWindow(QWidget *parent)
     //edit and view buttons disabled by default until file selected
     ui->viewFileButton->setDisabled(true);
     ui->editFileButton->setDisabled(true);
+    ui->checkOutButton->setDisabled(true);
+    ui->checkInButton->setDisabled(true);
 
     connect(ui->addFilesButton, SIGNAL(clicked(bool)), this, SLOT(addFiles()));
     connect(ui->setWorkingFolderButton, SIGNAL(clicked(bool)), this, SLOT(setWorkingFolder()));
@@ -71,6 +71,8 @@ MainWindow::MainWindow(QWidget *parent)
 //context menu for files widget
 void MainWindow::showContextMenuFiles(const QPoint &pos)
 {
+    ui->foldersTreeWidget->clearSelection();
+
     QMenu contextMenu(tr("menu"), this);
     contextMenu.pos() = pos;
 
@@ -119,19 +121,20 @@ void MainWindow::showContextMenuFiles(const QPoint &pos)
         int fileNr = ui->filesTreeWidget->selectedItems().size();
         //multiple files -> checkin, checkout enabled; rename, view, edit disabled
         if (fileNr==0) { //in case nothing is selected->first becomes current item
-            ui->filesTreeWidget->setItemSelected(ui->filesTreeWidget->itemAt(QPoint(0,0)), true);
+            ui->filesTreeWidget->itemAt(QPoint(0,0))->setSelected(true);
+            ui->filesTreeWidget->setCurrentItem(ui->filesTreeWidget->itemAt(QPoint(0,0)));
+            fileNr++;
+        }
+        if (fileNr!=1) {
+            actionEdit.setDisabled(true);
+            actionView.setDisabled(true);
+            actionRename.setDisabled(true);
         } else {
-            if (fileNr!=1) {
-                actionEdit.setDisabled(true);
-                actionView.setDisabled(true);
-                actionRename.setDisabled(true);
+            if(ui->filesTreeWidget->currentItem()->foreground(0).color().red()==255 && ui->filesTreeWidget->currentItem()->foreground(0).color().green()==0 && ui->filesTreeWidget->currentItem()->foreground(0).color().blue()==0) { //file is checked out
+                actionCheckOut.setDisabled(true);
             } else {
-                if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) { //file is checked out
-                    actionCheckOut.setDisabled(true);
-                } else {
-                    actionCheckIn.setDisabled(true);
-                    actionEdit.setDisabled(true);
-                }
+                actionCheckIn.setDisabled(true);
+                actionEdit.setDisabled(true);
             }
         }
     }
@@ -142,6 +145,8 @@ void MainWindow::showContextMenuFiles(const QPoint &pos)
 //context menu for folders widget
 void MainWindow::showContextMenuDirs(const QPoint &pos)
 {
+    ui->filesTreeWidget->clearSelection();
+
     QMenu contextMenu(tr("menu"), this);
     contextMenu.pos() = pos;
     QAction action1("Create Project", this);
@@ -176,6 +181,10 @@ void MainWindow::showContextMenuDirs(const QPoint &pos)
         actionDelete.setDisabled(true);
         actionRename.setDisabled(true);
     } else {
+        if (ui->foldersTreeWidget->selectedItems().size()==0) {
+            ui->foldersTreeWidget->itemAt(QPoint(0,0))->setSelected(true);
+            ui->foldersTreeWidget->setCurrentItem(ui->foldersTreeWidget->itemAt(QPoint(0,0)));
+        }
         expandFolder(ui->foldersTreeWidget->currentItem());
 
         //the working folder can't be renamed or deleted
@@ -233,7 +242,7 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
             } else {
 
                 //looping through the vector of names
-                for(int i = 0; i < files.size(); i++){
+                for(unsigned int i = 0; i < files.size(); i++){
 
                     line = QString::fromStdString(files[i]);
                     QTreeWidgetItem *item = new QTreeWidgetItem();
@@ -256,7 +265,7 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
                         if(content.contains("\"" + filePath + "\"")) {
                             item->setText(1, workingDirPath+"/"+pathToDestination);
                             for(int j=0; j<filesColumnCount; j++) {
-                                item->setTextColor(j, checkedOutColor);
+                                item->setForeground(j, checkedOutColor);
                             }
                         }
 
@@ -283,7 +292,7 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
             } else {
 
                 //only filestreewidget need to be reloaded
-                for(int i = 0; i < files.size(); i++){
+                for(unsigned int i = 0; i < files.size(); i++){
 
                     line = QString::fromStdString(files[i]);
                     QTreeWidgetItem *item = new QTreeWidgetItem();
@@ -304,7 +313,7 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
                     if(content.contains("\"" + filePath + "\"")) {
                         item->setText(1, workingDirPath+"/"+pathToDestination);
                         for(int j=0; j<filesColumnCount; j++) {
-                            item->setTextColor(j, checkedOutColor);
+                            item->setForeground(j, checkedOutColor);
                         }
                     }
 
@@ -312,46 +321,48 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
             }
         }
     }
-    fileClicked();
 }
 
 
 //disable/enable Edit and View based on the number of files selected and checked out status
 void MainWindow::menuEditClicked()
 {
-    //multiple selected->disable
+    //multiple or nothing selected->disable
     //checked out->enable
-    if (ui->filesTreeWidget->selectedItems().size()!=1){
-        ui->actionEdit_File->setDisabled(true);
-        ui->actionView_File->setDisabled(true);
-    } else {
-        ui->actionView_File->setDisabled(false);
-        if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
-            ui->actionEdit_File->setDisabled(false);
-        } else {
-            ui->actionEdit_File->setDisabled(true);
+    int fileNr = ui->filesTreeWidget->selectedItems().size();
+    ui->actionEdit_File->setDisabled(true);
+    ui->actionView_File->setDisabled(true);
+
+    if (fileNr!=0) {
+        if (fileNr==1) {
+            ui->actionView_File->setDisabled(false);
+            if(ui->filesTreeWidget->currentItem()->foreground(0).color().red()==255 && ui->filesTreeWidget->currentItem()->foreground(0).color().green()==0 && ui->filesTreeWidget->currentItem()->foreground(0).color().blue()==0) {
+                ui->actionEdit_File->setDisabled(false);
+            }
         }
     }
-
 }
 
 //disable Rename if there is more than one file selected
 void MainWindow::menuFileClicked()
 {
-    int nr = ui->filesTreeWidget->selectedItems().size();
-    ui->actionRename->setDisabled(false);
-    ui->actionDelete->setDisabled(false);
+    int fileNr = ui->filesTreeWidget->selectedItems().size();
+    ui->actionRename->setDisabled(true);
+    ui->actionDelete->setDisabled(true);
 
-    if (nr==0) {  //folders
+    if (fileNr==0) {  //folders or nothing
         //working directory can't neither remained nor deleted
-        if(ui->selectedFolderLabel->text()==workingDirName) {
-            ui->actionRename->setDisabled(true);
-            ui->actionDelete->setDisabled(true);
+        if(ui->foldersTreeWidget->selectedItems().size()!=0) {
+            if(ui->selectedFolderLabel->text()!=workingDirName) {
+                ui->actionRename->setDisabled(false);
+                ui->actionDelete->setDisabled(false);
+            }
         }
 
     } else { //files
-        if (nr>1){
-            ui->actionRename->setDisabled(true);
+        ui->actionDelete->setDisabled(false);
+        if (fileNr==1){ //one file selected
+            ui->actionRename->setDisabled(false);
         }
     }
 }
@@ -360,16 +371,20 @@ void MainWindow::menuFileClicked()
 void MainWindow::menuSourceSafeClicked()
 {
     int fileNr = ui->filesTreeWidget->selectedItems().size();
-    if(fileNr==0 || fileNr>1) { //folder
-        ui->actionCheck_Out->setDisabled(false);
-        ui->actionCheck_In->setDisabled(false);
-    } else { //files
-        if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) { //checked out
-            ui->actionCheck_Out->setDisabled(true);
-            ui->actionCheck_In->setDisabled(false);
-        } else {
+    //default for nothing being selected
+    ui->actionCheck_Out->setDisabled(true);
+    ui->actionCheck_In->setDisabled(true);
+
+    if (fileNr>1 || ui->foldersTreeWidget->selectedItems().size()!=0) { //group of files or folder
             ui->actionCheck_Out->setDisabled(false);
-            ui->actionCheck_In->setDisabled(true);
+            ui->actionCheck_In->setDisabled(false);
+    } else { //files
+        if  (fileNr==1) {
+            if(ui->filesTreeWidget->currentItem()->foreground(0).color().red()==255 && ui->filesTreeWidget->currentItem()->foreground(0).color().green()==0 && ui->filesTreeWidget->currentItem()->foreground(0).color().blue()==0) { //checked out
+                ui->actionCheck_In->setDisabled(false);
+            } else {
+                ui->actionCheck_Out->setDisabled(false);
+            }
         }
     }
 }
@@ -463,56 +478,49 @@ void MainWindow::folderClicked()
     ui->filesTreeWidget->selectionModel()->clearSelection();
     ui->viewFileButton->setDisabled(true);
     ui->editFileButton->setDisabled(true);
-    ui->checkInButton->setDisabled(true);
 
-    int nr = ui->filesTreeWidget->topLevelItemCount();
-    for(int i=0; i<nr; i++) {
-        //check if file was checked out by its color (black->not checked out)
-        if(ui->filesTreeWidget->topLevelItem(i)->textColor(0).red()==255 && ui->filesTreeWidget->topLevelItem(i)->textColor(0).green()==0 && ui->filesTreeWidget->topLevelItem(i)->textColor(0).blue()==0) {
-            ui->checkInButton->setDisabled(false);
-            break;
-        }
+    if (ui->foldersTreeWidget->selectedItems().size()==0) {
+        ui->checkInButton->setDisabled(true);
+        ui->checkOutButton->setDisabled(true);
+    } else {
+        ui->checkInButton->setDisabled(false);
+        ui->checkOutButton->setDisabled(false);
     }
 }
 
 void MainWindow::fileClicked()
 {
-    //check whether or not only one file is selected, because can't open, edit or rename mutiple at the same time
-    if (ui->filesTreeWidget->selectedItems().size()!=1) {
-        ui->editFileButton->setDisabled(true);
-        ui->viewFileButton->setDisabled(true);
+    int fileNr  = ui->filesTreeWidget->selectedItems().size();
+    ui->viewFileButton->setDisabled(false);
+    ui->checkOutButton->setDisabled(false);
+    ui->checkInButton->setDisabled(false);
+    ui->editFileButton->setDisabled(false);
 
-        QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
-        QTreeWidgetItem *file;
-        foreach(file, fileList) {
-            //check if file was checked out by its color (black->not checked out)
-            if(file->textColor(0).red()==255 && file->textColor(0).green()==0 && file->textColor(0).blue()==0) {
-                ui->checkInButton->setDisabled(false);
-                break;
-            }
-        }
-    } else {
-        if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
-           ui->checkOutButton->setDisabled(true);
-           ui->checkInButton->setDisabled(false);
-           ui->editFileButton->setDisabled(false);
-        } else {
-            ui->checkOutButton->setDisabled(false);
-            ui->checkInButton->setDisabled(true);
-            ui->editFileButton->setDisabled(true);
-        }
-    }
-
-    if (ui->filesTreeWidget->selectedItems().size()!=0) {
+    if (fileNr!=0) {
         ui->foldersTreeWidget->selectionModel()->clearSelection();
 
-        //enable/disable Edit and View buttons based on the number of files selected
-        if (ui->filesTreeWidget->selectedItems().size()==1) {
-            ui->viewFileButton->setDisabled(false);
+        //check whether or not only one file is selected, because can't open, edit or rename mutiple at the same time
+        if (fileNr==1) {
+            //checked out->edit, check in enabled; check out disabled
+            if(ui->filesTreeWidget->currentItem()->foreground(0).color().red()==255 && ui->filesTreeWidget->currentItem()->foreground(0).color().green()==0 && ui->filesTreeWidget->currentItem()->foreground(0).color().blue()==0) { //checked out
+                ui->checkOutButton->setDisabled(true);
+            } else {
+                ui->checkInButton->setDisabled(true);
+                ui->editFileButton->setDisabled(true);
+            }
         } else {
-            ui->viewFileButton->setDisabled(true);
+            if (fileNr==0) {
+                ui->checkOutButton->setDisabled(true);
+                ui->checkInButton->setDisabled(true);
+            }
             ui->editFileButton->setDisabled(true);
+            ui->viewFileButton->setDisabled(true);
         }
+    } else {
+        ui->viewFileButton->setDisabled(true);
+        ui->checkOutButton->setDisabled(true);
+        ui->checkInButton->setDisabled(true);
+        ui->editFileButton->setDisabled(true);
     }
 }
 
@@ -576,6 +584,8 @@ void MainWindow::setWorkingFolder()
     if (path!="" && dialog.isOkClicked) {
 
         ui->foldersTreeWidget->clear();
+        ui->checkInButton->setDisabled(false);
+        ui->checkOutButton->setDisabled(false);
 
         workingDirPath = path;
         workingDirName = path.splitRef("/").last().toString();
@@ -592,6 +602,7 @@ void MainWindow::setWorkingFolder()
         topLevel->setText(0, workingDirName);
         topLevel->setText(1, "");
         tree->addTopLevelItem(topLevel);
+        tree->setCurrentItem(topLevel);
         topLevel->setSelected(true);
 
         //loading first depth files and folders into the widgets
@@ -622,7 +633,7 @@ void MainWindow::checkIn()
                 } else {
                     filePath = fileList[i]->text(0);
                 }
-                fileList[i]->setTextColor(0, QColor(0, 0, 0));
+                fileList[i]->setForeground(0, QColor(0, 0, 0));
                 fileList[i]->setText(1, "");
                 checkInFile(workingDirPath.toStdString(), filePath.toStdString(), commitMessage, errorMessage);
                 if (errorMessage != ""){
@@ -642,7 +653,7 @@ void MainWindow::checkIn()
                 } else {
                     filePath = ui->filesTreeWidget->topLevelItem(i)->text(0);
                 }
-                ui->filesTreeWidget->topLevelItem(i)->setTextColor(0, QColor(0, 0, 0));
+                ui->filesTreeWidget->topLevelItem(i)->setForeground(0, QColor(0, 0, 0));
                 ui->filesTreeWidget->topLevelItem(i)->setText(1, "");
                 checkInFile(workingDirPath.toStdString(), filePath.toStdString(), commitMessage, errorMessage);
                 if (errorMessage != ""){
@@ -682,7 +693,7 @@ void MainWindow::checkOut()
         checkoutFile(workingDirPath.toStdString(), name.toStdString(), errorMessage);
         item->setText(1, workingDirPath+"/"+filePath);
         for(int j=0; j<filesColumnCount; j++) {
-            item->setTextColor(j, checkedOutColor);
+            item->setForeground(j, checkedOutColor);
         }
     }
 
@@ -855,6 +866,7 @@ void MainWindow::deleteSelected()
         } else {
             folder->parent()->setExpanded(true);
             ui->foldersTreeWidget->setCurrentItem(folder->parent());
+            ui->filesTreeWidget->setCurrentItem(folder->parent());
             folder->parent()->setSelected(true);
             emit expandFolder(folder->parent());
             folderClicked();
@@ -984,7 +996,7 @@ void MainWindow::refreshWidgets()
             vssFile.close();
 
             //looping through the vector of names
-            for(int i = 0; i < files.size(); i++){
+            for(unsigned int i = 0; i < files.size(); i++){
 
                 line = QString::fromStdString(files[i]);
                 QTreeWidgetItem *item = new QTreeWidgetItem();
@@ -1007,7 +1019,7 @@ void MainWindow::refreshWidgets()
                     if(content.contains("\"" + filePath + "\"")) {
                         item->setText(1, workingDirPath+"/"+pathToDestination);
                         for(int j=0; j<filesColumnCount; j++) {
-                            item->setTextColor(j, checkedOutColor);
+                            item->setForeground(j, checkedOutColor);
                         }
                     }
 
