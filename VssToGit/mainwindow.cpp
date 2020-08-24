@@ -3,8 +3,8 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
     , checkedOutColor(255, 0, 0)
+    , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
@@ -118,7 +118,7 @@ void MainWindow::showContextMenuFiles(const QPoint &pos)
 
         int fileNr = ui->filesTreeWidget->selectedItems().size();
         //multiple files -> checkin, checkout enabled; rename, view, edit disabled
-        if (fileNr==0) {
+        if (fileNr==0) { //in case nothing is selected->first becomes current item
             ui->filesTreeWidget->setItemSelected(ui->filesTreeWidget->itemAt(QPoint(0,0)), true);
         } else {
             if (fileNr!=1) {
@@ -316,20 +316,21 @@ void MainWindow::expandFolder(QTreeWidgetItem *parentItem)
 }
 
 
-//disable/enable Edit and View based on the number of files selected
+//disable/enable Edit and View based on the number of files selected and checked out status
 void MainWindow::menuEditClicked()
 {
+    //multiple selected->disable
+    //checked out->enable
     if (ui->filesTreeWidget->selectedItems().size()!=1){
         ui->actionEdit_File->setDisabled(true);
         ui->actionView_File->setDisabled(true);
     } else {
-        //check if file was checked out by its color (black->not checked out)
+        ui->actionView_File->setDisabled(false);
         if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
             ui->actionEdit_File->setDisabled(false);
         } else {
             ui->actionEdit_File->setDisabled(true);
         }
-        ui->actionView_File->setDisabled(false);
     }
 
 }
@@ -341,13 +342,14 @@ void MainWindow::menuFileClicked()
     ui->actionRename->setDisabled(false);
     ui->actionDelete->setDisabled(false);
 
-    if (nr==0) {
+    if (nr==0) {  //folders
+        //working directory can't neither remained nor deleted
         if(ui->selectedFolderLabel->text()==workingDirName) {
             ui->actionRename->setDisabled(true);
             ui->actionDelete->setDisabled(true);
         }
 
-    } else {
+    } else { //files
         if (nr>1){
             ui->actionRename->setDisabled(true);
         }
@@ -357,34 +359,19 @@ void MainWindow::menuFileClicked()
 //disable/enable Check In based on the number of files checked out
 void MainWindow::menuSourceSafeClicked()
 {
-    QList<QTreeWidgetItem *> fileList = ui->filesTreeWidget->selectedItems();
-    int fileNr = fileList.size();
-    if(fileNr>1) {
-        ui->actionCheck_In->setDisabled(true);
-        QTreeWidgetItem *file;
-        foreach(file, fileList) {
-            //check if file was checked out by its color (black->not checked out)
-            if(file->textColor(0).red()==255 && file->textColor(0).green()==0 && file->textColor(0).blue()==0) {
-                ui->actionCheck_In->setDisabled(false);
-                break;
-            }
-        }
-
-    } else {
-        if(fileNr==1) {
-            if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) {
-                ui->actionCheck_Out->setDisabled(true);
-                ui->actionCheck_In->setDisabled(false);
-            } else {
-                ui->actionCheck_Out->setDisabled(false);
-                ui->actionCheck_In->setDisabled(true);
-            }
+    int fileNr = ui->filesTreeWidget->selectedItems().size();
+    if(fileNr==0 || fileNr>1) { //folder
+        ui->actionCheck_Out->setDisabled(false);
+        ui->actionCheck_In->setDisabled(false);
+    } else { //files
+        if(ui->filesTreeWidget->currentItem()->textColor(0).red()==255 && ui->filesTreeWidget->currentItem()->textColor(0).green()==0 && ui->filesTreeWidget->currentItem()->textColor(0).blue()==0) { //checked out
+            ui->actionCheck_Out->setDisabled(true);
+            ui->actionCheck_In->setDisabled(false);
         } else {
             ui->actionCheck_Out->setDisabled(false);
-            ui->actionCheck_In->setDisabled(false);
+            ui->actionCheck_In->setDisabled(true);
         }
     }
-
 }
 
 void MainWindow::takeAction(QAction*action)
