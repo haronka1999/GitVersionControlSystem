@@ -873,6 +873,7 @@ void MainWindow::deleteSelected()
                 delete file;
             }
         }
+        fileClicked();
     } else { //folder
         string errorMessage = "";
         QTreeWidgetItem *folder = ui->foldersTreeWidget->currentItem();
@@ -881,15 +882,20 @@ void MainWindow::deleteSelected()
         if (errorMessage!="") {
             showMessage("ButtonImages/error.png", "Error", errorMessage.c_str());
         } else {
-            folder->parent()->setExpanded(true);
-            ui->foldersTreeWidget->setCurrentItem(folder->parent());
-            ui->filesTreeWidget->setCurrentItem(folder->parent());
-            folder->parent()->setSelected(true);
-            emit expandFolder(folder->parent());
+            QTreeWidgetItem *parent = folder->parent();
+            //setting the label text to the expanded folder's path
+            if(parent->parent()) {
+                ui->selectedFolderLabel->setText(workingDirName+"/"+parent->text(1));
+            } else {
+                ui->selectedFolderLabel->setText(workingDirName);
+            }
+            delete folder;
+            ui->foldersTreeWidget->setCurrentItem(parent);
+            parent->setSelected(true);
             folderClicked();
-            delete folder;      
+            refreshWidgets();
         }
-        ui->filesTreeWidget->clear();
+
     }
 }
 
