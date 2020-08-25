@@ -1,0 +1,30 @@
+﻿  pch.cpp
+  dllmain.cpp
+  Git_DLL.cpp
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(8,1): warning C4273: 'exportProject': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(22,18): message : see previous definition of 'exportProject'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(14,1): warning C4273: 'exportFolder': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(23,18): message : see previous definition of 'exportFolder'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(21,1): warning C4273: 'gitInit': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(24,18): message : see previous definition of 'gitInit'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(27,1): warning C4273: 'deleteFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(25,18): message : see previous definition of 'deleteFile'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(51,1): warning C4273: 'renameFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(26,18): message : see previous definition of 'renameFile'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(75,1): warning C4273: 'isFileExisting': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(27,18): message : see previous definition of 'isFileExisting'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(102,110): warning C4273: 'checkInFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(29,18): message : see previous definition of 'checkInFile'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(128,1): warning C4273: 'checkoutFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(28,18): message : see previous definition of 'checkoutFile'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(155,1): warning C4273: 'getFolder': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(30,28): message : see previous definition of 'getFolder'
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(189,52): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.cpp(220,84): warning C4273: 'getFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\Git_DLL\Git_DLL.h(31,18): message : see previous definition of 'getFile'
+     Creating library C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\x64\Release\Git_DLL.lib and object C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\x64\Release\Git_DLL.exp
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 339 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Git_DLL.vcxproj -> C:\Users\aron.horvath\Desktop\VssToGit\release\Git_DLL\x64\Release\Git_DLL.dll
