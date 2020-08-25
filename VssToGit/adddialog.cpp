@@ -42,7 +42,6 @@ AddDialog::AddDialog(QWidget *parent) :
 
     //disabled by default until file is selected
     ui->viewFileButton->setEnabled(false);
-    connect(ui->filesTreeView, SIGNAL(pressed(QModelIndex)), this, SLOT(changeStateViewButton()));
 
     //removes the whatisthis hint plugin
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -71,30 +70,39 @@ void AddDialog::showFiles()
     ui->filesTreeView->setRootIndex(idx);
 }
 
-//the accesibility to view a file changes based on the number of files selected
-void AddDialog::changeStateViewButton()
-{
-    if (ui->filesTreeView->selectionModel()->selectedIndexes().size()==4) { //only one file can be selected for view
-        ui->viewFileButton->setEnabled(true);
-    } else {
-        ui->viewFileButton->setEnabled(false); // action not performed if there's more than one file selected
-    }
-}
-
 //a folder was clicked
 void AddDialog::deselectFiles()
 {
+    ui->viewFileButton->setEnabled(true);
+    ui->addButton->setEnabled(true);
+
     if (ui->foldersTreeView->selectionModel()->selectedIndexes().size()!=0){
         ui->filesTreeView->selectionModel()->clearSelection();
         ui->viewFileButton->setEnabled(false);
+    } else { //nothing selected
+        if (ui->filesTreeView->selectionModel()->selectedIndexes().size()==0){
+            ui->addButton->setEnabled(false);
+            ui->viewFileButton->setEnabled(false);
+        }
     }
 }
 
 //a file was clicked
 void AddDialog::deselectFolder()
 {
+    ui->addButton->setEnabled(true);
+    ui->viewFileButton->setEnabled(true);
+
     if (ui->filesTreeView->selectionModel()->selectedIndexes().size()!=0){
         ui->foldersTreeView->selectionModel()->clearSelection();
+        if (ui->filesTreeView->selectionModel()->selectedIndexes().size()!=4) { //only one file can be selected for view
+            ui->viewFileButton->setEnabled(false); // action not performed if there's more than one file selected
+        }
+    } else { ///nothing selected
+        if (ui->filesTreeView->selectionModel()->selectedIndexes().size()==0){
+            ui->addButton->setEnabled(false);
+            ui->viewFileButton->setEnabled(false);
+        }
     }
 }
 
@@ -208,7 +216,6 @@ void AddDialog::addFile(string checkinmsg)
     if (newFileList.size()!=0) {
         filesTreewidget->insertTopLevelItems(0, newFileList);
     }
-    showMessage("ButtonImages/success.jpg", "Message", "Done.");
 }
 
 //making sure that there's no folder in the selected folder with the exact same name
@@ -289,7 +296,6 @@ void AddDialog::addFolder(string checkinmsg)
             }
         }
     }
-    showMessage("ButtonImages/success.jpg", "Message", "Done.");
 }
 
 void AddDialog::viewFile()
@@ -303,6 +309,7 @@ void AddDialog::viewFile()
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)!=0){
             QTextStream stream(&file);
             QTextBrowser *browser = new QTextBrowser();
+            browser->setWindowTitle(fileDirModel->fileName(ui->filesTreeView->currentIndex()));
             browser->setWindowIcon(QIcon("ButtonImages/viewfile1.png"));
             browser->setText(stream.readAll());
             browser->setGeometry(600, 180, 1000, 700);

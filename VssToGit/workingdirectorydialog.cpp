@@ -29,7 +29,6 @@ void WorkingDirectoryDialog::showFolders()
         ui->treeView->hideColumn(i);
 }
 
-
 void WorkingDirectoryDialog::on_okButton_clicked()
 {
     pathToShow = "";
@@ -57,7 +56,7 @@ void WorkingDirectoryDialog::on_createFolderButton_clicked()
     QString folderName = dialog->getText(this, tr("Create Folder"),
                                          tr("Folder name:"), QLineEdit::Normal,
                                          tr("Name"), &ok, dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-        if(!ok){
+    if(!ok){
         return;
     }
 
@@ -66,7 +65,6 @@ void WorkingDirectoryDialog::on_createFolderButton_clicked()
         return;
     }
 
-    qDebug() << qPath;
     if(qPath == ""){
         showMessage("ButtonImages/error.png", "Error", "Please select a path.");
         return;
@@ -84,7 +82,7 @@ void WorkingDirectoryDialog::on_helpButton_clicked()
     showMessage("ButtonImages/help3.png","Help", "If you want to create a new repository, you need to select a folder where"
                                                   "a new repository will be initalized.\n"
                                                   "\n"
-                                                  "In case you want to create a new folder,please press the Create Folder button"
+                                                  "In case you want to create a new folder, please press the Create Folder button"
                                                   "and the new folder will be initialized to the choosen folder.");
 }
 

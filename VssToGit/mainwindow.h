@@ -27,7 +27,7 @@
 #include "selectdialog.h"
 #include <QPainter>
 #include "adddialog.h"
-#include <Git_DLL/Git_DLL/Git_DLL.h>
+#include <Git_DLL.h>
 #include <QStandardItemModel>
 #include <QStandardItem>
 #include <qstyleditemdelegate.h>
@@ -67,6 +67,8 @@ public slots:
     void showContextMenuFiles(const QPoint &pos);
     void showContextMenuDirs(const QPoint &pos);
     void expandFolder(QTreeWidgetItem *);
+    void displayOnlyFiles(QString, vector<string>);
+    void displayFilesAndFolders(QTreeWidgetItem *, QString, vector<string>);
     void menuEditClicked();
     void menuFileClicked();
     void menuSourceSafeClicked();

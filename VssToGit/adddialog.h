@@ -41,7 +41,6 @@ private:
 
 public slots:
     void showFiles();
-    void changeStateViewButton();
     void deselectFiles();
     void deselectFolder();
     void add();
