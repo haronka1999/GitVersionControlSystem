@@ -6,8 +6,8 @@ git checkout -m %2
 git add %2
 
 
-FINDSTR %2 "vss.zsu">NUL
+FINDSTR %2 "db.vss">NUL
 
 if %ERRORLEVEL% EQU 1 (
-	echo %2>>"vss.zsu"
+	echo %2>>"db.vss"
 ) 
