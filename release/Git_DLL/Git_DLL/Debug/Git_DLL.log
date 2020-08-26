@@ -1,0 +1,22 @@
+﻿  pch.cpp
+  dllmain.cpp
+  Git_DLL.cpp
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(7,1): warning C4273: 'gitInit': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(22,18): message : see previous definition of 'gitInit'
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(13,1): warning C4273: 'deleteFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(23,18): message : see previous definition of 'deleteFile'
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(37,1): warning C4273: 'renameFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(24,18): message : see previous definition of 'renameFile'
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(61,1): warning C4273: 'isFileExisting': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(25,18): message : see previous definition of 'isFileExisting'
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(88,106): warning C4273: 'checkIn': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(27,18): message : see previous definition of 'checkIn'
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(114,1): warning C4273: 'checkoutFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(26,18): message : see previous definition of 'checkoutFile'
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(151,1): warning C4273: 'getFolder': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(28,28): message : see previous definition of 'getFolder'
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(195,84): warning C4273: 'getFile': inconsistent dll linkage
+C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(29,18): message : see previous definition of 'getFile'
+  Generating Code...
+     Creating library C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Debug\Git_DLL.lib and object C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Debug\Git_DLL.exp
+  Git_DLL.vcxproj -> C:\Users\aron.horvath\Desktop\VssToGit\Git_DLL\Debug\Git_DLL.dll

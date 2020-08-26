@@ -6,7 +6,7 @@
 
 void exportProject(string pathtoWorkingDirectory, string projectName)
 {
-    string cmd = "batchfiles\\exportProject.bat \"" + pathtoWorkingDirectory + "\" \"" + projectName + "\"";
+    string cmd = "batchfiles\\exportProject.bat \"" + pathtoWorkingDirectory + "\" \"" + projectName +"\"";
     WinExec(cmd.c_str(), SW_HIDE);
 }
 
@@ -130,7 +130,7 @@ bool checkoutFile(string pathtoWorkingDirectory, string fileName, string& messag
     string str = "\"" + pathtoWorkingDirectory + "\" \"" + fileName + "\" 2> out.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
     const wchar_t* widecstr = widestr.c_str();
-
+    
     SHELLEXECUTEINFO ShExecInfo = { 0 };
     ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
     ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
@@ -186,7 +186,7 @@ vector<string> getFolder(string pathtoWorkingDirectory, string folderName, bool 
         int dirNameLength = 0;
         //the current folder's name needs to be removed from the lines in the result -> erase
         if (folderName != ".") { //check if it is the first level of the working folder
-            dirNameLength = folderName.length() + 1;
+            dirNameLength = folderName.length()+1;
         }
 
         while (getline(outfoldr, line)) {
@@ -205,8 +205,7 @@ vector<string> getFolder(string pathtoWorkingDirectory, string folderName, bool 
                         files.push_back(line);
                     }
                 }
-            }
-            else { //file
+            } else { //file
                 files.push_back(line);
             }
         }
@@ -218,8 +217,6 @@ vector<string> getFolder(string pathtoWorkingDirectory, string folderName, bool 
 }
 
 void getFile(string pathtoWorkingDirectory, string fileName, string& errorMessage) {
-
-    ifstream outerr("outerr.txt"), outfile("outfile.txt");
 
     string str = "\"" + pathtoWorkingDirectory + "\" \"" + fileName + "\" > outfile.txt 2> outerr.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
@@ -238,8 +235,9 @@ void getFile(string pathtoWorkingDirectory, string fileName, string& errorMessag
     ShellExecuteEx(&ShExecInfo);
     WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
 
+    ifstream outerr("outerr.txt"), outfile("outfile.txt");
     errorMessage = string((istreambuf_iterator<char>(outerr)), istreambuf_iterator<char>());
-
     outerr.close();
     outfile.close();
+    remove("outerr.txt");
 }

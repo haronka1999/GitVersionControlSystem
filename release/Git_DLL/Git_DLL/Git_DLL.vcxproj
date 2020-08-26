@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{bbb455c6-9fb6-4f4a-8861-f9e85a987c95}</ProjectGuid>
+    <ProjectGuid>{72827ca6-c9a3-4397-b5c9-d48f3a5be76d}</ProjectGuid>
     <RootNamespace>GitDLL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
