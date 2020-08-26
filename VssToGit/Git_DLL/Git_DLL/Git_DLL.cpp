@@ -218,8 +218,6 @@ vector<string> getFolder(string pathtoWorkingDirectory, string folderName, bool 
 
 void getFile(string pathtoWorkingDirectory, string fileName, string& errorMessage) {
 
-    ifstream outerr("outerr.txt"), outfile("outfile.txt");
-
     string str = "\"" + pathtoWorkingDirectory + "\" \"" + fileName + "\" > outfile.txt 2> outerr.txt";
     std::wstring widestr = std::wstring(str.begin(), str.end());
     const wchar_t* widecstr = widestr.c_str();
@@ -237,8 +235,9 @@ void getFile(string pathtoWorkingDirectory, string fileName, string& errorMessag
     ShellExecuteEx(&ShExecInfo);
     WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
 
+    ifstream outerr("outerr.txt"), outfile("outfile.txt");
     errorMessage = string((istreambuf_iterator<char>(outerr)), istreambuf_iterator<char>());
-
     outerr.close();
     outfile.close();
+    remove("outerr.txt");
 }

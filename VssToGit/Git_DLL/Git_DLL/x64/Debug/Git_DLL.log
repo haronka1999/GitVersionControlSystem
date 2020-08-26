@@ -20,5 +20,4 @@ C:\Qt\Projects\vss_to_git\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(30,28): message : s
 C:\Qt\Projects\vss_to_git\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(189,50): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
 C:\Qt\Projects\vss_to_git\VssToGit\Git_DLL\Git_DLL\Git_DLL.cpp(219,84): warning C4273: 'getFile': inconsistent dll linkage
 C:\Qt\Projects\vss_to_git\VssToGit\Git_DLL\Git_DLL\Git_DLL.h(31,18): message : see previous definition of 'getFile'
-     Creating library C:\Qt\Projects\vss_to_git\VssToGit\Git_DLL\x64\Debug\Git_DLL.lib and object C:\Qt\Projects\vss_to_git\VssToGit\Git_DLL\x64\Debug\Git_DLL.exp
   Git_DLL.vcxproj -> C:\Qt\Projects\vss_to_git\VssToGit\Git_DLL\x64\Debug\Git_DLL.dll
