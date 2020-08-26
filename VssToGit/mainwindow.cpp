@@ -775,7 +775,7 @@ void MainWindow::savePressed()
 
     msgBox.setWindowIcon(QIcon("ButtonImages/error.png"));
     msgBox.setWindowTitle("Confirm");
-    msgBox.setText("Are you sure want to save and checkIn?\t");
+    msgBox.setText("Are you sure want to save and check it in?\t");
     msgBox.setStandardButtons(QMessageBox::Yes);
     msgBox.addButton(QMessageBox::No);
 
@@ -807,9 +807,13 @@ void MainWindow::savePressed()
             if (errorMessage != ""){
                 showMessage("ButtonImages/error.png", "Error", errorMessage.c_str());
             }else{
+                ui->filesTreeWidget->currentItem()->setForeground(0, QColor(0, 0, 0));
+                ui->filesTreeWidget->currentItem()->setText(1, "");
                 showMessage("ButtonImages/success.jpg", "Message", "Check In success");
             }
+            file.remove();
         }
+
     } else {
         msgBox.close();
     }
@@ -874,6 +878,7 @@ void MainWindow::deleteSelected()
             }
         }
         fileClicked();
+
     } else { //folder
         string errorMessage = "";
         QTreeWidgetItem *folder = ui->foldersTreeWidget->currentItem();
